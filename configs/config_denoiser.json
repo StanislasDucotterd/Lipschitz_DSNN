@@ -1,19 +1,19 @@
 {
     "activation_fn_params": {
         "activation_type": "linearspline",
-        "groupsort_groupsize": -1,
+        "groupsort_groupsize": 4,
         "spline_init": "identity",
         "spline_range": 0.1,
-        "spline_size": 3,
+        "spline_size": 5,
         "spline_alphas": false
     },
-    "exp_name": "DS_layer_5_channel_32_region_2_lambda_0_spectral_norm_sigma_5",
+    "exp_name": "DS_layer_5_channel_32_region_4_lambda_0_spectral_norm_sigma_5",
     "log_dir": "denoising_exps/",
     "net_params": {
         "bias": true,
         "kernel_size": 3,
-        "num_channels": 32,
-        "num_layers": 5,
+        "num_channels": 4,
+        "num_layers": 3,
         "lipschitz_constant": 1.0,
         "signal_size": 40,
         "projection": "spectral_norm",

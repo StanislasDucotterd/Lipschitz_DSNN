@@ -31,8 +31,9 @@ class LipschitzConv2d(_ConvNd):
         self.projection = projection
         self.lipschitz = lipschitz
         # Some projections need largest eigenvector of the layer
-        self.largest_eigenvector = normalize(torch.randn(1, out_channels, signal_size, signal_size))
-        self.end_of_training = False
+        self.additional_parameters = {}
+        self.additional_parameters['largest_eigenvector'] = normalize(torch.randn(1, out_channels, signal_size, signal_size))
+        self.additional_parameters['end_of_training'] = False
 
         if padding_mode == 'zeros':
             self.padding_mode = 'constant'
@@ -40,11 +41,11 @@ class LipschitzConv2d(_ConvNd):
             self.padding_mode = padding_mode
 
     def forward(self, x):
-        proj_weight, u  = self.projection(self.weight, self.lipschitz, self.largest_eigenvector, self.end_of_training)
-        self.largest_eigenvector  = u
+        proj_weight, new_additional_parameters  = self.projection(self.weight, self.lipschitz, self.additional_parameters)
+        self.additional_parameters  = new_additional_parameters
 
         return F.conv2d(F.pad(x, self._reversed_padding_repeated_twice, self.padding_mode),
                         proj_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
         
     def set_end_of_training(self):
-        self.end_of_training = True
+        self.additional_parameters['end_of_training'] = True

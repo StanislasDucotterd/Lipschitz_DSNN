@@ -10,45 +10,45 @@ def normalize(tensor):
     normalized_tensor = tensor / norm
     return normalized_tensor
 
-def identity(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def identity(weights, lipschitz_goal, additional_parameters):
     """no projection"""
     current_lipschitz = None
     new_weights = weights
-    return weights, largest_eigenvector
+    return weights, additional_parameters
 
-def l1_normalization_conv(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def l1_normalization_conv(weights, lipschitz_goal, additional_parameters):
     """divides the conv layer by its L1 norm"""
 
     current_lipschitz = torch.max(torch.sum(torch.abs(weights), dim=(0, 2, 3)))
     new_weights = lipschitz_goal * weights / current_lipschitz
-    return new_weights, largest_eigenvector
+    return new_weights, additional_parameters
 
-def l1_projection_conv(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def l1_projection_conv(weights, lipschitz_goal, additional_parameters):
     """divides every column by its L1 norm"""
     current_lipschitzs = torch.sum(torch.abs(weights), dim=(0, 2, 3)).reshape(1, weights.shape[1], 1, 1)
     new_weights = lipschitz_goal * weights / current_lipschitzs
-    return new_weights, largest_eigenvector
+    return new_weights, additional_parameters
 
-def linf_normalization_conv(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def linf_normalization_conv(weights, lipschitz_goal, additional_parameters):
     """divides the conv layer by its Linf norm"""
 
     current_lipschitz = torch.max(torch.sum(torch.abs(weights), dim=(1, 2, 3)))
     new_weights = lipschitz_goal * weights / current_lipschitz
-    return new_weights, largest_eigenvector
+    return new_weights, additional_parameters
 
-def linf_projection_conv(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def linf_projection_conv(weights, lipschitz_goal, additional_parameters):
     """divides every row by its L1 norm"""
     current_lipschitzs = torch.sum(torch.abs(weights), dim=(0, 2, 3)).reshape(weights.shape[0], 1, 1, 1)
     new_weights = lipschitz_goal * weights / current_lipschitzs
-    return new_weights, largest_eigenvector
+    return new_weights, additional_parameters
 
-def spectral_norm_conv(weights, lipschitz_goal, largest_eigenvector, end_of_training):
+def spectral_norm_conv(weights, lipschitz_goal, additional_parameters):
     """divides the conv layer by its L2 norm"""
     kernel_size = weights.shape[2]
     padding = kernel_size //2
 
-    u = largest_eigenvector
-    if end_of_training: n_steps = 5
+    u = additional_parameters['largest_eigenvector']
+    if additional_parameters['end_of_training']: n_steps = 5
     else: n_steps = 1
 
     with torch.no_grad():
@@ -63,4 +63,5 @@ def spectral_norm_conv(weights, lipschitz_goal, largest_eigenvector, end_of_trai
 
     current_lipschitz = torch.sum(u * F.conv2d(v, weights, padding=padding))
     new_weights = lipschitz_goal * weights / current_lipschitz
-    return new_weights, u
+    additional_parameters['largest_eigenvector'] = u
+    return new_weights, additional_parameters
