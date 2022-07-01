@@ -10,33 +10,33 @@ def normalize(tensor):
     normalized_tensor = tensor / norm
     return normalized_tensor
 
-def identity(weights, lipschitz_goal, additional_parameters):
+def identity(weights, lipschitz_goal, additional_parameters=None):
     """no projection"""
     current_lipschitz = None
     new_weights = weights
     return weights, additional_parameters
 
-def l1_normalization_conv(weights, lipschitz_goal, additional_parameters):
+def l1_normalization_conv(weights, lipschitz_goal, additional_parameters=None):
     """divides the conv layer by its L1 norm"""
 
     current_lipschitz = torch.max(torch.sum(torch.abs(weights), dim=(0, 2, 3)))
     new_weights = lipschitz_goal * weights / current_lipschitz
     return new_weights, additional_parameters
 
-def l1_projection_conv(weights, lipschitz_goal, additional_parameters):
+def l1_projection_conv(weights, lipschitz_goal, additional_parameters=None):
     """divides every column by its L1 norm"""
     current_lipschitzs = torch.sum(torch.abs(weights), dim=(0, 2, 3)).reshape(1, weights.shape[1], 1, 1)
     new_weights = lipschitz_goal * weights / current_lipschitzs
     return new_weights, additional_parameters
 
-def linf_normalization_conv(weights, lipschitz_goal, additional_parameters):
+def linf_normalization_conv(weights, lipschitz_goal, additional_parameters=None):
     """divides the conv layer by its Linf norm"""
 
     current_lipschitz = torch.max(torch.sum(torch.abs(weights), dim=(1, 2, 3)))
     new_weights = lipschitz_goal * weights / current_lipschitz
     return new_weights, additional_parameters
 
-def linf_projection_conv(weights, lipschitz_goal, additional_parameters):
+def linf_projection_conv(weights, lipschitz_goal, additional_parameters=None):
     """divides every row by its L1 norm"""
     current_lipschitzs = torch.sum(torch.abs(weights), dim=(0, 2, 3)).reshape(weights.shape[0], 1, 1, 1)
     new_weights = lipschitz_goal * weights / current_lipschitzs
