@@ -138,7 +138,7 @@ class TrainerDenoiser:
 
             if self.total_training_step % 10 == 0:
                 if self.config["activation_fn_params"]["spline_alphas"] & self.model.using_splines:
-                    alphas = torch.nn.utils.parameters_to_vector(self.model.parameters_spline_alphas())
+                    alphas = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
                     log['alpha_mean'] = torch.mean(alphas).cpu().item()
                     log['alpha_std'] = torch.std(alphas).cpu().item()
 
