@@ -35,7 +35,7 @@ class TrainerDenoiser:
         self.model = self.model.to(device)
         for module in self.model.layers:
                 if isinstance(module, LipschitzConv2d):
-                    module.largest_eigenvector = module.largest_eigenvector.to(device)
+                    module.additional_parameters['largest_eigenvector'] = module.additional_parameters['largest_eigenvector'].to(device)
         
         print("Number of parameters in the model: ", self.model.get_num_params())
 
