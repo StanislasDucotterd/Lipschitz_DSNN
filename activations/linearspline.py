@@ -204,6 +204,8 @@ class LinearSpline(ABC, nn.Module):
         grid = self.grid.to(self.coefficients_vect.device)
         zero_knot_indexes = self.zero_knot_indexes.to(grid.device)
 
+        x = x.mul(self.alpha_vect)
+
         if self.lipschitz_constraint:
             output = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, 
                                             self.range_, zero_knot_indexes, self.even)
@@ -211,6 +213,9 @@ class LinearSpline(ABC, nn.Module):
         else:
             output = LinearSpline_Func.apply(x, self.coefficients_vect, grid, 
                                              self.range_, zero_knot_indexes, self.even)
+
+        x = x.div(self.alpha_vect)
+                                        
         return output
 
 
