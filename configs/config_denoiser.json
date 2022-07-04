@@ -5,10 +5,10 @@
         "spline_init": "identity",
         "spline_range": 0.1,
         "spline_size": 11,
-        "spline_alphas": true,
-        "lipschitz_constrained": true
+        "spline_alphas": false,
+        "lipschitz_constrained": false
     },
-    "exp_name": "DS_layer_5_channel_32_region_10_linf_norm_sigma_5_alpha",
+    "exp_name": "DS_layer_5_channel_32_region_10_linf_norm_sigma_5_NOT_LIPSCHITZ",
     "log_dir": "denoising_exps/",
     "net_params": {
         "bias": true,

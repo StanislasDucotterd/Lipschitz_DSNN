@@ -114,7 +114,7 @@ class LinearSpline(ABC, nn.Module):
     """
 
     def __init__(self, mode, num_activations, size, range_, init,
-                 lipschitz_constraint=True, **kwargs):
+                 lipschitz_constraint, **kwargs):
 
         if mode not in ['conv', 'fc']:
             raise ValueError('Mode should be either "conv" or "fc".')
@@ -207,16 +207,16 @@ class LinearSpline(ABC, nn.Module):
         x = x.mul(self.scaling_coeffs_vect)
 
         if self.lipschitz_constraint:
-            output = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, 
+            x = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, 
                                             self.range_, zero_knot_indexes, self.even)
 
         else:
-            output = LinearSpline_Func.apply(x, self.coefficients_vect, grid, 
+            x = LinearSpline_Func.apply(x, self.coefficients_vect, grid, 
                                              self.range_, zero_knot_indexes, self.even)
 
         x = x.div(self.scaling_coeffs_vect)
                                         
-        return output
+        return x
 
 
     def extra_repr(self):
