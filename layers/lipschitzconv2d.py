@@ -35,17 +35,25 @@ class LipschitzConv2d(_ConvNd):
         self.additional_parameters['largest_eigenvector'] = normalize(torch.randn(1, out_channels, signal_size, signal_size))
         self.additional_parameters['end_of_training'] = False
 
+        self.lipschitz_weight = self.projection(self.weight, self.lipschitz, self.additional_parameters)
+
         if padding_mode == 'zeros':
             self.padding_mode = 'constant'
         else:
             self.padding_mode = padding_mode
 
     def forward(self, x):
-        proj_weight, new_additional_parameters  = self.projection(self.weight, self.lipschitz, self.additional_parameters)
-        self.additional_parameters  = new_additional_parameters
+        if self.training:
+            lipschitz_weight, new_additional_parameters  = self.projection(self.weight, self.lipschitz, self.additional_parameters)
+            self.additional_parameters  = new_additional_parameters
+            self.lipschitz_weight = lipschitz_weight
 
-        return F.conv2d(F.pad(x, self._reversed_padding_repeated_twice, self.padding_mode),
-                        proj_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
-        
+            return F.conv2d(F.pad(x, self._reversed_padding_repeated_twice, self.padding_mode),
+                            lipschitz_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
+        else:
+            
+            return F.conv2d(F.pad(x, self._reversed_padding_repeated_twice, self.padding_mode),
+                            self.lipschitz_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
+
     def set_end_of_training(self):
         self.additional_parameters['end_of_training'] = True
