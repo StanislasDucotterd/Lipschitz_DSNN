@@ -1,22 +1,23 @@
 {
     "activation_fn_params": {
         "activation_type": "linearspline",
-        "groupsort_groupsize": 4,
+        "groupsort_groupsize": 16,
         "spline_init": "identity",
         "spline_range": 0.1,
-        "spline_size": 5,
-        "spline_alphas": false
+        "spline_size": 11,
+        "spline_alphas": true,
+        "lipschitz_constrained": true
     },
-    "exp_name": "DS_layer_5_channel_32_region_4_lambda_0_spectral_norm_sigma_5",
+    "exp_name": "DS_layer_5_channel_32_region_10_linf_norm_sigma_5_alpha",
     "log_dir": "denoising_exps/",
     "net_params": {
         "bias": true,
         "kernel_size": 3,
-        "num_channels": 4,
-        "num_layers": 3,
+        "num_channels": 32,
+        "num_layers": 5,
         "lipschitz_constant": 1.0,
         "signal_size": 40,
-        "projection": "spectral_norm",
+        "projection": "linf_norm",
         "weight_initialization": "identity",
         "padding_mode": "zeros"
     },
@@ -32,7 +33,7 @@
         "batch_size": 128,
         "num_workers": 4,
         "shuffle": true,
-        "train_data_file": "/home/ducotter/Lipschitz_DSNN/data/BSD500/train.h5"
+        "train_data_file": "/home/ducotter/PnP/data/train.h5"
     },
     "training_options": {
         "epochs": 200,
@@ -42,6 +43,6 @@
         "batch_size": 1,
         "num_workers": 0,
         "shuffle": false,
-        "val_data_file": "/home/ducotter/Lipschitz_DSNN/data/BSD500/val.h5"
+        "val_data_file": "/home/ducotter/PnP/data/val.h5"
     }
 }
