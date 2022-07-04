@@ -223,7 +223,8 @@ class LinearSpline(ABC, nn.Module):
         """ repr for print(model) """
 
         s = ('mode={mode}, num_activations={num_activations}, '
-             'init={init}, size={size}, grid={grid[0]:.3f}.')
+             'init={init}, size={size}, grid={grid[0]:.3f}, '
+             'lipschitz_constraint={lipschitz_constraint}.')
 
         return s.format(**self.__dict__)
 
