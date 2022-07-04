@@ -22,6 +22,7 @@ class BaseModel(nn.Module):
                  spline_size=None,
                  spline_range=None,
                  spline_init=None,
+                 lipschitz_constraint=True,
                  groupsort_groupsize=None,
                  **kwargs):
 
@@ -34,6 +35,7 @@ class BaseModel(nn.Module):
         self.spline_init = spline_init
         self.spline_size = spline_size
         self.spline_range = spline_range
+        self.lipschitz_constraint = lipschitz_constraint
 
         # groupsort attributes
         self.groupsort_groupsize = groupsort_groupsize
@@ -62,7 +64,7 @@ class BaseModel(nn.Module):
             for mode, num_activations in activation_specs:
                 activations.append(self.linearspline(mode=mode,
                                     num_activations=num_activations,
-                                    lipschitz_constraint=True,
+                                    lipschitz_constraint=self.lipschitz_constraint,
                                     size=self.spline_size,
                                     range_=self.spline_range,
                                     init=self.spline_init))
