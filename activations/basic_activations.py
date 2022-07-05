@@ -1,6 +1,7 @@
 import torch
+from torch import Tensor
 
-class Identity(Module):
+class Identity(torch.nn.Module):
 
     def __init__(self):
         super(Identity, self).__init__()
@@ -8,7 +9,7 @@ class Identity(Module):
     def forward(self, input: Tensor) -> Tensor:
         return input
 
-class AbsoluteValue(Module):
+class AbsoluteValue(torch.nn.Module):
 
     def __init__(self):
         super(AbsoluteValue, self).__init__()

@@ -10,6 +10,7 @@ from torch import Tensor
 from activations.linearspline import LinearSpline
 from activations.groupsort import GroupSort
 from activations.householder import HouseHolder
+from activations.basic_activations import AbsoluteValue, Identity
 
 
 class BaseModel(nn.Module):
@@ -109,6 +110,14 @@ class BaseModel(nn.Module):
             relu = nn.ReLU()
             for i in range(len(activation_specs)):
                 activations.append(relu)
+
+        elif self.activation_type == 'absolute_value':
+            for i in range(len(activation_specs)):
+                activations.append(AbsoluteValue())
+
+        elif self.activation_type == 'identity':
+            for i in range(len(activation_specs)):
+                activations.append(Identity())
 
         elif self.activation_type == 'groupsort':
             for i, (_, num_activations) in enumerate(activation_specs):

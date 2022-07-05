@@ -81,7 +81,7 @@ class TrainerDenoiser:
             params_list.append({'params': spline_utils.get_spline_coefficients(self.model), \
                                 'lr': self.config["optimizer"]["lr_spline_coeffs"]})
 
-            if self.config["activation_fn_params"]["spline_alphas"]:
+            if self.config["activation_fn_params"]["spline_scaling_coeff"]:
                 params_list.append({'params': spline_utils.get_spline_scaling_coeffs(self.model), \
                                     'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
 
@@ -139,10 +139,10 @@ class TrainerDenoiser:
             log['train_loss'] = total_loss.detach().cpu().item()
 
             if self.total_training_step % 10 == 0:
-                if self.config["activation_fn_params"]["spline_alphas"] & self.model.using_splines:
-                    alphas = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
-                    log['alpha_mean'] = torch.mean(alphas).cpu().item()
-                    log['alpha_std'] = torch.std(alphas).cpu().item()
+                if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.model.using_splines:
+                    spline_scaling_coeffs = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
+                    log['spline_scaling_coeff_mean'] = torch.mean(spline_scaling_coeffs).cpu().item()
+                    log['spline_scaling_coeff_std'] = torch.std(spline_scaling_coeffs).cpu().item()
 
 
                 self.wrt_step = self.total_training_step
