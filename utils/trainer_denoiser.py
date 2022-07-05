@@ -90,6 +90,7 @@ class TrainerDenoiser:
 
     def train(self):
         
+        best_psnr = 0
         self.model.train()
         for epoch in range(self.epochs+1):
 
@@ -100,7 +101,8 @@ class TrainerDenoiser:
                 self.model.set_end_of_training()
                 
             # SAVE CHECKPOINT
-            if epoch == self.epochs:
+            if val_epoch_results['val_psnr'] > best_psnr:
+                best_psnr = val_epoch_results['val_psnr']
                 self.save_checkpoint(epoch)
         
         self.writer.flush()
@@ -222,5 +224,5 @@ class TrainerDenoiser:
         }
 
         print('Saving a checkpoint:')
-        filename = self.checkpoint_dir + '/checkpoint_' + str(epoch) + '.pth'
+        filename = self.checkpoint_dir + '/checkpoint_best_epoch.pth'
         torch.save(state, filename)
