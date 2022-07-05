@@ -112,7 +112,7 @@ class BaseModel(nn.Module):
 
         elif self.activation_type == 'groupsort':
             for i, (_, num_activations) in enumerate(activation_specs):
-                activations.append(GroupSort(num_units=self.groupsort_groupsize, axis=1))
+                activations.append(GroupSort(num_units=num_activations // self.groupsort_groupsize, axis=1))
 
         elif self.activation_type == 'householder':
             for mode, num_activations in activation_specs:
