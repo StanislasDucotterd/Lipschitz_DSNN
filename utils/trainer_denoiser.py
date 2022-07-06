@@ -138,14 +138,14 @@ class TrainerDenoiser:
             
             log['train_loss'] = total_loss.detach().cpu().item()
 
-            if self.total_training_step % 10 == 0:
+            if self.total_training_step % (10 * 128 // self.batch_size)  == 0:
                 if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.model.using_splines:
                     spline_scaling_coeffs = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
                     log['spline_scaling_coeff_mean'] = torch.mean(spline_scaling_coeffs).cpu().item()
                     log['spline_scaling_coeff_std'] = torch.std(spline_scaling_coeffs).cpu().item()
 
-
-                self.wrt_step = self.total_training_step
+                # the step actually represents the amount of data that has been in the model
+                self.wrt_step = self.total_training_step * self.batch_size
                 self.write_scalars_tb(log)
 
             tbar.set_description('T ({}) | TotalLoss {:.5f} |'.format(epoch, log['train_loss'])) 
