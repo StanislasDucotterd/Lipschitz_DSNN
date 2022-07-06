@@ -86,6 +86,7 @@ class TrainerDenoiser:
                                     'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
 
         self.optimizer = optimizer_type(params_list)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, self.config['scheduler_gamma'])
         
 
     def train(self):
@@ -96,6 +97,7 @@ class TrainerDenoiser:
 
             epoch_results = self.train_epoch(epoch)
             val_epoch_results = self.valid_epoch(epoch)
+            self.scheduler.step()
     
             if epoch == (9 * self.epochs // 10):
                 self.model.set_end_of_training()
