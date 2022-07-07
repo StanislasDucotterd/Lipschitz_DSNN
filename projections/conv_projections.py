@@ -48,7 +48,7 @@ def spectral_norm_conv(weights, lipschitz_goal, additional_parameters):
     padding = kernel_size //2
 
     u = additional_parameters['largest_eigenvector']
-    if additional_parameters['end_of_training']: n_steps = 5
+    if additional_parameters['end_of_epoch']: n_steps = 5
     else: n_steps = 1
 
     with torch.no_grad():

@@ -95,15 +95,15 @@ class TrainerDenoiser:
         self.model.train()
         for epoch in range(self.epochs+1):
 
+            if epoch >= self.epochs * 0.9:
+                self.model.set_end_of_training()
+
             epoch_results = self.train_epoch(epoch)
             val_epoch_results = self.valid_epoch(epoch)
-            self.scheduler.step()
-    
-            if epoch == (9 * self.epochs // 10):
-                self.model.set_end_of_training()
+            self.scheduler.step()        
                 
             # SAVE CHECKPOINT
-            if val_epoch_results['val_psnr'] > best_psnr:
+            if val_epoch_results['val_psnr'] > best_psnr & epoch >= self.epochs * 0.9:
                 best_psnr = val_epoch_results['val_psnr']
                 self.save_checkpoint(epoch)
         
@@ -123,12 +123,12 @@ class TrainerDenoiser:
             noisy_data = data + (self.sigma/255.0)*torch.randn(data.shape, device=self.device)
 
             self.optimizer.zero_grad()
-            
+                
             output = (noisy_data + self.model(noisy_data))/2.0
 
             # data fidelity
             data_fidelity = (self.criterion(output, data))/(self.batch_size)
-            
+                
             # regularization
             regularization = torch.zeros_like(data_fidelity)
             if self.model.using_splines and self.config['training_options']['lmbda'] > 0:
@@ -137,7 +137,7 @@ class TrainerDenoiser:
             total_loss = data_fidelity + regularization
             total_loss.backward()
             self.optimizer.step()
-            
+                
             log['train_loss'] = total_loss.detach().cpu().item()
 
             if self.total_training_step % (10 * 128 // self.batch_size)  == 0:

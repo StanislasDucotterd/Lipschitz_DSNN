@@ -33,7 +33,7 @@ class LipschitzConv2d(_ConvNd):
         # Some projections need largest eigenvector of the layer
         self.additional_parameters = {}
         self.additional_parameters['largest_eigenvector'] = normalize(torch.randn(1, out_channels, signal_size, signal_size))
-        self.additional_parameters['end_of_training'] = False
+        self.additional_parameters['end_of_epoch'] = False
 
         self.lipschitz_weight = self.projection(self.weight, self.lipschitz, self.additional_parameters)
 
@@ -56,4 +56,4 @@ class LipschitzConv2d(_ConvNd):
                             self.lipschitz_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
 
     def set_end_of_training(self):
-        self.additional_parameters['end_of_training'] = True
+        self.additional_parameters['end_of_epoch'] = True
