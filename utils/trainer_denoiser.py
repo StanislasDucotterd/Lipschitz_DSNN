@@ -1,6 +1,7 @@
 import torch
 import os
 import json
+import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torch.utils import tensorboard
@@ -159,8 +160,8 @@ class TrainerDenoiser:
         
         self.model.eval()
         loss_val = 0.0
-        psnr_val = 0.0
-        ssim_val = 0.0
+        psnr_val = []
+        ssim_val = []
 
         tbar_val = tqdm(self.val_dataloader, ncols=130, position=0, leave=True)
         
@@ -187,12 +188,14 @@ class TrainerDenoiser:
             self.writer.add_scalar(f'{self.wrt_mode}/loss', loss_val, epoch)
             psnr_val = psnr_val/len(self.val_dataloader)
             ssim_val = ssim_val/len(self.val_dataloader)
-            self.writer.add_scalar(f'{self.wrt_mode}/Test PSNR', psnr_val, epoch)
-            self.writer.add_scalar(f'{self.wrt_mode}/Test SSIM', ssim_val, epoch)
+            self.writer.add_scalar(f'{self.wrt_mode}/Test PSNR Mean', np.mean(psnr_val), epoch)
+            self.writer.add_scalar(f'{self.wrt_mode}/Test SSIM Mean', np.mean(ssim_val), epoch)
+            self.writer.add_scalar(f'{self.wrt_mode}/Test PSNR Std', np.std(psnr_val), epoch)
+            self.writer.add_scalar(f'{self.wrt_mode}/Test SSIM Std', np.std(ssim_val), epoch)
 
             log = {'val_loss': loss_val}
-            log["val_psnr"] = psnr_val
-            log["val_ssim"] = ssim_val
+            log["val_psnr"] = np.mean(psnr_val)
+            log["val_ssim"] = np.mean(ssim_val)
 
             # Log parameters
             if epoch == self.epochs and self.model.using_splines:
