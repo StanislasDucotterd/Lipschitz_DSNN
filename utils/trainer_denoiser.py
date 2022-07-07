@@ -176,8 +176,8 @@ class TrainerDenoiser:
 
                 loss_val = loss_val + loss.cpu().item()
                 out_val = torch.clamp(output, 0., 1.)
-                psnr_val = psnr_val.append(utilities.batch_PSNR(out_val, data, 1.))
-                ssim_val = ssim_val.append(utilities.batch_SSIM(out_val, data, 1.))
+                psnr_val.append(utilities.batch_PSNR(out_val, data, 1.))
+                ssim_val.append(utilities.batch_SSIM(out_val, data, 1.))
             
             # PRINT INFO
             loss_val = loss_val/len(self.val_dataloader)
