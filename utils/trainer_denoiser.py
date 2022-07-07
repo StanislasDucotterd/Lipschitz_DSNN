@@ -186,8 +186,6 @@ class TrainerDenoiser:
             # METRICS TO TENSORBOARD
             self.wrt_mode = 'val'
             self.writer.add_scalar(f'{self.wrt_mode}/loss', loss_val, epoch)
-            psnr_val = psnr_val/len(self.val_dataloader)
-            ssim_val = ssim_val/len(self.val_dataloader)
             self.writer.add_scalar(f'{self.wrt_mode}/Test PSNR Mean', np.mean(psnr_val), epoch)
             self.writer.add_scalar(f'{self.wrt_mode}/Test SSIM Mean', np.mean(ssim_val), epoch)
             self.writer.add_scalar(f'{self.wrt_mode}/Test PSNR Std', np.std(psnr_val), epoch)
