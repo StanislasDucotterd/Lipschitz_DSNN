@@ -37,6 +37,7 @@ def initialize_coeffs(init, grid_tensor):
             # initialize the spline such that its tv is maximized
             # while being 1-Lipschitz
             grid = grid_tensor[1] - grid_tensor[0]
+            coefficients = torch.zeros(grid_tensor.shape)
             coefficients[::2,::2] = - grid / 2
             coefficients[::2,1::2] = grid / 2
             coefficients[1::2,::2] = grid / 2
