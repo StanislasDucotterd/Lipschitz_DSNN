@@ -55,13 +55,14 @@ class LinearSpline_Func(torch.autograd.Function):
     input.
     """
     @staticmethod
-    def forward(ctx, x, coefficients_vect, grid, range_, zero_knot_indexes, even):
+    def forward(ctx, x, coefficients_vect, grid, zero_knot_indexes, size, even):
 
         # The value of the spline at any x is a combination 
         # of at most two coefficients
         if even:
             x = x + grid / 2
-        x_clamped = x.clamp(min=-range_, max=(range_ - grid.item()))
+        x_clamped = x.clamp(min=-(grid.item() * (size // 2)),
+                            max=(grid.item() * (size // 2 - 1)))
 
         floored_x = torch.floor(x_clamped / grid)  #left coefficient
         #fracs = x_clamped / grid - floored_x
@@ -75,9 +76,11 @@ class LinearSpline_Func(torch.autograd.Function):
         # (through linear interpolation) for each input in the B-spline range.
         activation_output = coefficients_vect[indexes + 1] * fracs + \
             coefficients_vect[indexes] * (1 - fracs)
+        if even:
+            activation_output = activation_output - grid / 2
 
         ctx.save_for_backward(fracs, coefficients_vect, indexes, grid)
-        return activation_output - grid / 2
+        return activation_output
 
     @staticmethod
     def backward(ctx, grad_out):
@@ -207,12 +210,12 @@ class LinearSpline(ABC, nn.Module):
         x = x.mul(self.scaling_coeffs_vect)
 
         if self.lipschitz_constraint:
-            x = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, 
-                                            self.range_, zero_knot_indexes, self.even)
+            x = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, zero_knot_indexes, \
+                                        self.size, self.even)
 
         else:
-            x = LinearSpline_Func.apply(x, self.coefficients_vect, grid, 
-                                             self.range_, zero_knot_indexes, self.even)
+            x = LinearSpline_Func.apply(x, self.coefficients_vect, grid, zero_knot_indexes, \
+                                        self.size, self.even)
 
         x = x.div(self.scaling_coeffs_vect)
                                         

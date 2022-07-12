@@ -35,7 +35,8 @@ class LipschitzConv2d(_ConvNd):
         self.additional_parameters['largest_eigenvector'] = normalize(torch.randn(1, out_channels, signal_size, signal_size))
         self.additional_parameters['end_of_epoch'] = False
 
-        self.lipschitz_weight = self.projection(self.weight, self.lipschitz, self.additional_parameters)
+        lipschitz_weight, _ = self.projection(self.weight, self.lipschitz, self.additional_parameters)
+        self.lipschitz_weight = nn.Parameter(lipschitz_weight)
 
         if padding_mode == 'zeros':
             self.padding_mode = 'constant'
@@ -46,7 +47,7 @@ class LipschitzConv2d(_ConvNd):
         if self.training:
             lipschitz_weight, new_additional_parameters  = self.projection(self.weight, self.lipschitz, self.additional_parameters)
             self.additional_parameters  = new_additional_parameters
-            self.lipschitz_weight = lipschitz_weight
+            self.lipschitz_weight.data = lipschitz_weight
 
             return F.conv2d(F.pad(x, self._reversed_padding_repeated_twice, self.padding_mode),
                             lipschitz_weight, self.bias, self.stride, _pair(0), self.dilation, self.groups)
