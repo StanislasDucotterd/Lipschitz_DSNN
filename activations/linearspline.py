@@ -15,7 +15,7 @@ def slope_clipping(cs, T):
 
     return new_cs
 
-def initialize_coeffs(init, grid_tensor):
+def initialize_coeffs(init, grid_tensor, grid):
         """The coefficients are initialized with the value of the activation
         # at each knot (c[k] = f[k], since B1 splines are interpolators)."""
         
@@ -36,7 +36,6 @@ def initialize_coeffs(init, grid_tensor):
         elif init == 'max_tv':
             # initialize the spline such that its tv is maximized
             # while being 1-Lipschitz
-            grid = grid_tensor[1] - grid_tensor[0]
             coefficients = torch.zeros(grid_tensor.shape)
             coefficients[::2,::2] = - grid / 2
             coefficients[::2,1::2] = grid / 2
@@ -44,7 +43,7 @@ def initialize_coeffs(init, grid_tensor):
             coefficients[1::2,1::2] = - grid / 2
         
         else:
-            raise ValueError('init should be in [identity, relu, absolute_value, maxmin, sawtooth, max_tv].')
+            raise ValueError('init should be in [identity, relu, absolute_value, maxmin, max_tv].')
         
         return coefficients
 
@@ -140,7 +139,7 @@ class LinearSpline(ABC, nn.Module):
 
         # tensor with locations of spline coefficients
         self.grid_tensor = torch.linspace(-self.range_, self.range_, self.size).expand((self.num_activations, self.size))
-        coefficients = initialize_coeffs(init, self.grid_tensor)  # spline coefficients
+        coefficients = initialize_coeffs(init, self.grid_tensor, self.grid)  # spline coefficients
         # Need to vectorize coefficients to perform specific operations
         # size: (num_activations*size)
         self.coefficients_vect = nn.Parameter(coefficients.contiguous().view(-1))

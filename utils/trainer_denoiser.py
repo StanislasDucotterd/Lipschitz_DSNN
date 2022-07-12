@@ -104,7 +104,7 @@ class TrainerDenoiser:
             self.scheduler.step()        
                 
             # SAVE CHECKPOINT
-            if val_epoch_results['val_psnr'] > best_psnr & epoch >= self.epochs * 0.9:
+            if val_epoch_results['val_psnr'] > best_psnr and epoch >= self.epochs * 0.9:
                 best_psnr = val_epoch_results['val_psnr']
                 self.save_checkpoint(epoch)
         
