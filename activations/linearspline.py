@@ -59,10 +59,11 @@ class LinearSpline_Func(torch.autograd.Function):
 
         # The value of the spline at any x is a combination 
         # of at most two coefficients
+        max_range = (grid.item() * (size // 2 - 1))
         if even:
-            x = x + grid / 2
-        x_clamped = x.clamp(min=-(grid.item() * (size // 2)),
-                            max=(grid.item() * (size // 2 - 1)))
+            x = x - grid / 2
+            max_range = (grid.item() * (size // 2 - 2))
+        x_clamped = x.clamp(min=-(grid.item() * (size // 2)), max=max_range)
 
         floored_x = torch.floor(x_clamped / grid)  #left coefficient
         #fracs = x_clamped / grid - floored_x
@@ -77,7 +78,7 @@ class LinearSpline_Func(torch.autograd.Function):
         activation_output = coefficients_vect[indexes + 1] * fracs + \
             coefficients_vect[indexes] * (1 - fracs)
         if even:
-            activation_output = activation_output - grid / 2
+            activation_output = activation_output + grid / 2
 
         ctx.save_for_backward(fracs, coefficients_vect, indexes, grid)
         return activation_output
