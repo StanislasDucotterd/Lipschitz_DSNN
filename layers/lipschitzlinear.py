@@ -15,13 +15,8 @@ class LipschitzLinear(Linear):
         
         self.lipschitz = lipschitz
         self.projection = projection
-        self.max_eigenvector = normalize(torch.randn(1, out_features))
         
     def forward(self, x):
         #Some projection methods need to also update the maximum eigenvector
-        proj_weight = self.projection(self.weight, self.lipschitz, self.max_eigenvector)
-        if type(proj_weight) is tuple:
-            self.max_eigenvector = proj_weight[1]
-            proj_weight = proj_weight[0]
-
-        return F.linear(x, proj_weight, self.bias)
+        lipschitz_weight = self.projection(self.weight, self.lipschitz)
+        return F.linear(x, lipschitz_weight, self.bias)

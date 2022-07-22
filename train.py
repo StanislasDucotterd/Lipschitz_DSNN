@@ -2,6 +2,7 @@ import argparse
 import json
 import torch
 from utils.trainer_denoiser import TrainerDenoiser
+from utils.trainer_1d import Trainer1D
 import os
 import warnings
 warnings.filterwarnings("ignore", message="Setting attributes on ParameterList is not supported.")
@@ -21,6 +22,11 @@ def main(args):
     if args.config.endswith('denoiser.json'):
         trainer_inst = TrainerDenoiser(config, seed, args.device)
         trainer_inst.train()
+    elif args.config.endswith('1d.json'):
+        trainer_inst = Trainer1D(config, seed, args.device)
+        trainer_inst.train()
+    else:
+        raise ValueError('Need to provide a valid config file') 
 
 
 if __name__ == '__main__':
