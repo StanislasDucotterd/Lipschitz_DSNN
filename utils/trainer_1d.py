@@ -29,7 +29,7 @@ class Trainer1D:
             raise NameError('Invalid Function Type')
 
         train_dataset = Function1D(function, config["dataset"]["training_dataset_size"], config["training_options"]["nbr_models"], seed)
-        val_dataset = generate_testing_set(function, config["dataset"]["testing_dataset_size"])
+        self.val_dataset = generate_testing_set(function, config["dataset"]["testing_dataset_size"])
 
         print('Preparing the dataloaders')
         # Prepare dataloaders 
@@ -90,11 +90,13 @@ class Trainer1D:
 
     def train(self):
 
+        min_val_loss = 1e8
         for epoch in range(self.epochs+1):
             epoch_results = self.train_epoch(epoch)
             val_epoch_results = self.valid_epoch(epoch)
-                
-        self.save_checkpoint(epoch)
+            if val_epoch_results < min_val_loss:
+                self.save_checkpoint(epoch)
+                min_val_loss = val_epoch_results
         
         self.writer.flush()
         self.writer.close()
@@ -117,7 +119,7 @@ class Trainer1D:
                 self.optimizers[i].zero_grad()
             
             outputs = []
-            for i in range(self.nbr_models):  
+            for i in range(self.nbr_models):
                 outputs.append(self.models[i](input_data[:, i, :]))
 
             # data fidelity
@@ -127,7 +129,7 @@ class Trainer1D:
             
             # regularization
             regularizations = self.nbr_models * [torch.zeros_like(data_fidelities[0])]
-            if self.models[0].using_deepsplines and self.config['training_options']['lmbda'] > 0:
+            if self.models[0].using_splines and self.config['training_options']['lmbda'] > 0:
                 for i in range(self.nbr_models):
                     regularization = self.config['training_options']['lmbda'] * self.models[i].TV2()
                     regularizations[i] = regularization
@@ -140,20 +142,21 @@ class Trainer1D:
 
             self.optimizer_step()
 
-            if self.total_training_step % (100 // self.batch_size)  == 0:
-                mean_total_loss = 0
-                for i in range(self.nbr_models):
-                    mean_total_loss += total_losses[i].detach().cpu().item()  
-                log['Mean train loss'] = mean_total_loss / self.nbr_models
+            mean_total_loss = 0
+            for i in range(self.nbr_models):
+                mean_total_loss += total_losses[i].detach().cpu().item()  
+            log['Mean train loss'] = mean_total_loss / self.nbr_models
 
-                if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.model.using_splines:
+            if self.total_training_step % (100 // self.batch_size)  == 0:
+
+                if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.models[0].using_splines:
                     spline_scaling_coeff_mean = 0
                     spline_scaling_coeff_mean_std = 0
-                    for i in range(self.models):
+                    for i in range(len(self.models)):
                         spline_scaling_coeffs = torch.nn.utils.parameters_to_vector(spline_utils.\
                                                 get_spline_scaling_coeffs(self.models[i]))
-                        spline_scaling_coeff_mean += torch.mean(spline_scaling_coeffs).cpu().item()
-                        spline_scaling_coeff_mean_std += torch.std(spline_scaling_coeffs).cpu().item()
+                        spline_scaling_coeff_mean += torch.mean(spline_scaling_coeffs).cpu().item() / self.nbr_models
+                        spline_scaling_coeff_mean_std += torch.std(spline_scaling_coeffs).cpu().item() / self.nbr_models
                     log['spline_scaling_coeff_mean'] = spline_scaling_coeff_mean
                     log['spline_scaling_coeff_mean_std'] = spline_scaling_coeff_mean_std
                 self.wrt_step = self.total_training_step * self.batch_size
@@ -187,8 +190,8 @@ class Trainer1D:
 
             median_loss = np.median(losses) / self.testing_dataset_size
             min_loss = np.min(losses) / self.testing_dataset_size
-            self.writer.add_scalar('Validation Median Loss', median_loss, epoch)             
-            self.writer.add_scalar('Validation Min Loss', min_loss, epoch)
+            self.writer.add_scalar('Validation/Median Loss', median_loss, epoch)             
+            self.writer.add_scalar('Validation/Min Loss', min_loss, epoch)
             max_loss_index = int(np.argmax(losses))
             min_loss_index = int(np.argmin(losses))
             median_loss_index = int(np.argsort(losses)[len(losses)//2])
@@ -198,7 +201,7 @@ class Trainer1D:
             if epoch == self.epochs:
                 self.test_mse = torch.tensor(losses)
 
-            if epoch % self.config["logging_info"]["epochs_per_image"] == 0:
+            if epoch %  100== 0:
                 figures_list = []
                 for i in range(3):
                     fig, ax = plt.subplots()
@@ -213,9 +216,9 @@ class Trainer1D:
                     plt.close()
                 self.writer.add_figure(f'Max, Median and Min Loss predictions', figures_list, global_step=epoch)
 
-            if epoch == self.epochs and self.model.using_splines:
+            if epoch == self.epochs and self.models[0].using_splines:
                 j = 1
-                for module in self.model.modules_linearspline:
+                for module in self.models[min_loss_index].modules_linearspline:
                     x = module.grid_tensor
                     y = module.lipschitz_coefficients
                     figures_list = []
@@ -225,14 +228,14 @@ class Trainer1D:
                         ax.plot(x[kk,:].cpu().numpy(), y[kk,:].cpu().numpy())
                         figures_list.append(fig)
                         plt.close()
-                    self.writer.add_figure(' Activation functions layer ' + str(j), figures_list, global_step=epoch)
+                    self.writer.add_figure('Best Model Activation functions layer ' + str(j), figures_list, global_step=epoch)
                     j += 1
-        return log
+        return min_loss
 
 
     def write_scalars_tb(self, logs):
         for k, v in logs.items():
-            self.writer.add_scalar(f'Training {k}', v, self.wrt_step)
+            self.writer.add_scalar(f'Training/{k}', v, self.wrt_step)
 
     def save_checkpoint(self, epoch):
         state_dicts = []
@@ -246,5 +249,5 @@ class Trainer1D:
         }
 
         print('Saving a checkpoint:')
-        filename = self.checkpoint_dir + '/checkpoint_' + str(epoch) + '.pth'
+        filename = self.checkpoint_dir + '/checkpoint_best_epoch.pth'
         torch.save(state, filename)

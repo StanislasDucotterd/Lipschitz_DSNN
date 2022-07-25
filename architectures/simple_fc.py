@@ -32,13 +32,17 @@ class SimpleFC(BaseModel):
         layer_sizes = network_parameters['layer_sizes']
         lipschitz = network_parameters['lipschitz_constant']
 
-        #First blocks
-        for i in range(len(layer_sizes)-1):
-            modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[i], layer_sizes[i+1]))
-            modules.append(self.init_activation(('fc', layer_sizes[i+1])))
+        if len(layer_sizes) == 2:
+            #Only spline activation functions without the weights
+            modules.append(self.init_activation(('fc', 1)))
+        else:
+            #First blocks
+            for i in range(len(layer_sizes)-2):
+                modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[i], layer_sizes[i+1]))
+                modules.append(self.init_activation(('fc', layer_sizes[i+1])))
 
-        # Last block
-        modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[-2], layer_sizes[-1]))
+            # Last block
+            modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[-2], layer_sizes[-1]))
 
         self.initialization(init_type=network_parameters['weight_initialization'])
         self.num_params = self.get_num_params()

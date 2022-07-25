@@ -12,17 +12,18 @@ def slope_1_ae(x, n, seed):
     np.random.seed(seed)
     knots = sorted(2.0 * np.random.rand(n) - 1.0)
     value = ReLU(x + 1.0)
-    mean_value = 2 - (n % 2)
+    mean_value = 2
     for i, knot in enumerate(knots):
         value += ReLU(x - knot) * 2 * (-1)**(i+1) 
-        mean_value += knot * (knot - 2) * (-1)**(i+1)
-    return value - mean_value
+        mean_value += (1 - 2*knot + knot**2) * (-1)**(i+1)
+    return value - mean_value / 2
 
 def slope_1_flat(x, n, seed):
     "define random function with slope 1 or -1 or 0 almost everywhere"
     "and changes of slope uniformly at random n times between -1 and 1"
     np.random.seed(seed)
-    knots = sorted(2.0 * np.random.rand(n) - 1.0)
+    knots = np.random.rand(2*n)
+    knots = sorted(2.0 * knots[n:2*n] - 1.0)
     value = ReLU(x + 1.0)
     current_state = 1
     mean_value = 2
@@ -34,7 +35,7 @@ def slope_1_flat(x, n, seed):
         value += ReLU(x - knot) * slope_change 
         mean_value += slope_change * (0.5 - knot + 0.5*knot**2)
         current_state = current_state + slope_change
-    return value - mean_value
+    return value - mean_value / 2
 
 def generate_testing_set(f, n_points):
     X = np.linspace(-1.0, 1.0, n_points).astype(np.float32)

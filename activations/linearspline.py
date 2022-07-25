@@ -30,6 +30,7 @@ def initialize_coeffs(init, grid_tensor, grid):
             # initalize half of the activations with the absolute and the other half with the 
             # identity. This is similar to maxmin because max(x1, x2) = (x1 + x2)/2 + |x1 - x2|/2 
             # and min(x1, x2) = (x1 + x2)/2 - |x1 - x2|/2
+            coefficients = torch.zeros(grid_tensor.shape)
             coefficients[::2, :] = (grid_tensor[::2, :]).abs()
             coefficients[1::2, :] = grid_tensor[1::2, :]
 
@@ -68,11 +69,9 @@ class LinearSpline_Func(torch.autograd.Function):
         floored_x = torch.floor(x_clamped / grid)  #left coefficient
         #fracs = x_clamped / grid - floored_x
         fracs = x / grid - floored_x  # distance to left coefficient
-
         # This gives the indexes (in coefficients_vect) of the left
         # coefficients
         indexes = (zero_knot_indexes.view(1, -1, 1, 1) + floored_x).long()
-
         # Only two B-spline basis functions are required to compute the output
         # (through linear interpolation) for each input in the B-spline range.
         activation_output = coefficients_vect[indexes + 1] * fracs + \
@@ -148,10 +147,7 @@ class LinearSpline(ABC, nn.Module):
         # size: (num_activations*size)
         self.coefficients_vect = nn.Parameter(coefficients.contiguous().view(-1))
 
-        if (self.mode == 'fc'):
-            self.scaling_coeffs_vect = nn.Parameter(torch.ones((1, self.num_activations)))
-        else:
-            self.scaling_coeffs_vect = nn.Parameter(torch.ones((1, self.num_activations, 1, 1)))
+        self.scaling_coeffs_vect = nn.Parameter(torch.ones((1, self.num_activations, 1, 1)))
 
     def init_zero_knot_indexes(self):
         """ Initialize indexes of zero knots of each activation.
@@ -191,8 +187,37 @@ class LinearSpline(ABC, nn.Module):
             slopes = F.conv1d(self.coefficients.unsqueeze(1), D2_filter).squeeze(1)
         return slopes
 
+    def reshape_forward(self, x):
+        """
+        Reshape inputs for deepspline activation forward pass, depending on
+        mode ('conv' or 'fc').
+        """
+        input_size = x.size()
+        if self.mode == 'fc':
+            if len(input_size) == 2:
+                # one activation per conv channel
+                # transform to 4D size (N, num_units=num_activations, 1, 1)
+                x = x.view(*input_size, 1, 1)
+            else:
+                raise ValueError(f'input size is {len(input_size)}D but should be 2D')
+        else:
+            assert len(input_size) == 4, 'input to activation should be 4D (N, C, H, W) if mode="conv".'
 
-    def forward(self, x):
+        return x
+
+    def reshape_back(self, output, input_size):
+        """
+        Reshape back outputs after deepspline activation forward pass,
+        depending on mode ('conv' or 'fc').
+        """
+        if self.mode == 'fc':
+            # transform back to 2D size (N, num_units)
+            output = output.view(*input_size)
+
+        return output
+
+
+    def forward(self, input):
         """
         Args:
             input (torch.Tensor):
@@ -202,8 +227,10 @@ class LinearSpline(ABC, nn.Module):
         Returns:
             output (torch.Tensor)
         """
+        input_size = input.size()
+        x = self.reshape_forward(input)
         assert x.size(1) == self.num_activations, \
-            'Wrong shape of input: {} != {}.'.format(input.size(1), self.num_activations)
+            'Wrong shape of input: {} != {}.'.format(x.size(1), self.num_activations)
 
         grid = self.grid.to(self.coefficients_vect.device)
         zero_knot_indexes = self.zero_knot_indexes.to(grid.device)
@@ -211,16 +238,17 @@ class LinearSpline(ABC, nn.Module):
         x = x.mul(self.scaling_coeffs_vect)
 
         if self.lipschitz_constraint:
-            x = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, zero_knot_indexes, \
+            output = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, zero_knot_indexes, \
                                         self.size, self.even)
 
         else:
-            x = LinearSpline_Func.apply(x, self.coefficients_vect, grid, zero_knot_indexes, \
+            output = LinearSpline_Func.apply(x, self.coefficients_vect, grid, zero_knot_indexes, \
                                         self.size, self.even)
 
-        x = x.div(self.scaling_coeffs_vect)
-                                        
-        return x
+        output = output.div(self.scaling_coeffs_vect)
+        output = self.reshape_back(output, input_size)
+
+        return output
 
 
     def extra_repr(self):
