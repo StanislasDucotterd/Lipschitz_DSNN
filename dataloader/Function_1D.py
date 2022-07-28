@@ -37,6 +37,16 @@ def slope_1_flat(x, n, seed):
         current_state = current_state + slope_change
     return value - mean_value / 2
 
+def cosines(x):
+    return np.cos(7*np.pi*x)/(7*np.pi)
+
+def sawtooth(x):
+    triangle = lambda x: 1 - np.abs(x) if np.abs(x) <= 1 else 0
+    sawtooth = lambda x: (triangle(4*(x + 0.75)) + triangle(4*(x + 0.25)) + \
+                triangle(4*(x - 0.25)) + triangle(4*(x - 0.75)))/4
+    
+    return sawtooth(x) - 0.125 
+
 def generate_testing_set(f, n_points):
     X = np.linspace(-1.0, 1.0, n_points).astype(np.float32)
     y = np.vectorize(f, otypes=[np.float32])(X)

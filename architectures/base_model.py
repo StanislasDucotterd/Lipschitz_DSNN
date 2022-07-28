@@ -107,9 +107,8 @@ class BaseModel(nn.Module):
         activations = nn.ModuleList()
 
         if self.activation_type == 'relu':
-            relu = nn.ReLU()
             for i in range(len(activation_specs)):
-                activations.append(relu)
+                activations.append(nn.ReLU())
 
         elif self.activation_type == 'absolute_value':
             for i in range(len(activation_specs)):
@@ -120,7 +119,7 @@ class BaseModel(nn.Module):
                 activations.append(Identity())
 
         elif self.activation_type == 'groupsort':
-            for i, (_, num_activations) in enumerate(activation_specs):
+            for _, num_activations in activation_specs:
                 activations.append(GroupSort(num_units=num_activations // self.groupsort_groupsize, axis=1))
 
         elif self.activation_type == 'householder':

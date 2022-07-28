@@ -3,7 +3,7 @@ import torch.nn as nn
 from architectures.base_model import BaseModel
 from layers.lipschitzlinear import LipschitzLinear
 from projections.fc_projections import (identity, l1_normalization_fc, l1_projection_fc, \
-                    linf_normalization_fc, linf_projection_fc, l2_normalization_fc)
+        linf_normalization_fc, linf_projection_fc, l2_normalization_fc, bjorck_orthonormalize_fc)
 
 
 class SimpleFC(BaseModel):
@@ -26,6 +26,8 @@ class SimpleFC(BaseModel):
             projection = linf_projection_fc
         elif network_parameters['projection'] == 'l2_norm':
             projection = l2_normalization_fc
+        elif network_parameters['projection'] == 'orthonormalize':
+            projection = bjorck_orthonormalize_fc
         else:
             raise ValueError('Projection type is not valid')
 
