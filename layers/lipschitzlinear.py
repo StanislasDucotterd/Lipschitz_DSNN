@@ -2,12 +2,6 @@ import torch
 from torch.nn import Linear
 import torch.nn.functional as F
 
-def normalize(tensor):
-    norm = float(torch.sqrt(torch.sum(tensor * tensor)))
-    norm = max(norm, 1e-10)
-    normalized_tensor = tensor / norm
-    return normalized_tensor
-
 class LipschitzLinear(Linear):
     def __init__(self, lipschitz: float, projection, in_features: int, out_features: int, bias: bool = True):
         

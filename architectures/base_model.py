@@ -10,7 +10,7 @@ from torch import Tensor
 from activations.linearspline import LinearSpline
 from activations.groupsort import GroupSort
 from activations.householder import HouseHolder
-from activations.basic_activations import AbsoluteValue, Identity
+from activations.basic_activations import AbsoluteValue, Identity, LipschitzPReLU
 
 
 class BaseModel(nn.Module):
@@ -25,6 +25,7 @@ class BaseModel(nn.Module):
                  spline_init=None,
                  lipschitz_constraint=True,
                  groupsort_groupsize=None,
+                 prelu_init=None,
                  **kwargs):
 
         super().__init__()
@@ -40,6 +41,9 @@ class BaseModel(nn.Module):
 
         # groupsort attributes
         self.groupsort_groupsize = groupsort_groupsize
+
+        #PReLU attributes
+        self.prelu_init = prelu_init
 
         self.linearspline = None
         if self.activation_type == 'linearspline':
@@ -109,6 +113,10 @@ class BaseModel(nn.Module):
         if self.activation_type == 'relu':
             for i in range(len(activation_specs)):
                 activations.append(nn.ReLU())
+
+        elif self.activation_type == 'prelu':
+            for _, num_activations in activation_specs:
+                activations.append(LipschitzPReLU(num_parameters=num_activations, init=self.prelu_init))
 
         elif self.activation_type == 'absolute_value':
             for i in range(len(activation_specs)):

@@ -31,9 +31,6 @@ class SimpleFC(BaseModel):
         elif network_parameters['projection'] == 'ortho_1_l2_norm':
             #bjorck on all layers except the last one
             projection = bjorck_orthonormalize_fc
-        elif network_parameters['projection'] == 'ortho_2_l2_norm':
-            #bjorck on all layers except the last two
-            projection = bjorck_orthonormalize_fc
         else:
             raise ValueError('Projection type is not valid')
 
@@ -46,16 +43,12 @@ class SimpleFC(BaseModel):
         else:
             #First blocks
             for i in range(len(layer_sizes)-2):
-                if i == len(layer_sizes) - 3 and network_parameters['projection'] == 'ortho_2_l2_norm':
-                    modules.append(LipschitzLinear(lipschitz, l2_normalization_fc, layer_sizes[i], layer_sizes[i+1]))
-                    modules.append(self.init_activation(('fc', layer_sizes[i+1])))
-                else:
-                    modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[i], layer_sizes[i+1]))
-                    modules.append(self.init_activation(('fc', layer_sizes[i+1])))
+                modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[i], layer_sizes[i+1]))
+                modules.append(self.init_activation(('fc', layer_sizes[i+1])))
 
 
             # Last block
-            if network_parameters['projection'] == 'ortho_2_l2_norm' or network_parameters['projection'] == 'ortho_1_l2_norm':
+            if network_parameters['projection'] == 'ortho_1_l2_norm':
                 modules.append(LipschitzLinear(lipschitz, l2_normalization_fc, layer_sizes[-2], layer_sizes[-1]))
             else:
                 modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[-2], layer_sizes[-1]))

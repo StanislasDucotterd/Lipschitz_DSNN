@@ -203,8 +203,7 @@ class Trainer1D:
             indices = [max_loss_index, median_loss_index, min_loss_index]
             titles = ['Maximum Loss', 'Median Loss', 'Minimum Loss']
 
-            if epoch == self.epochs:
-                self.test_mse = torch.tensor(losses)
+            self.test_mse = torch.tensor(losses)
 
             if epoch %  100== 0:
                 figures_list = []
