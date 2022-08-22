@@ -11,21 +11,20 @@ import matplotlib.pyplot as plt
 from layers.lipschitzlinear import LipschitzLinear
 from dataloader.Function_1D import (Function1D, generate_testing_set,
      slope_1_ae, slope_1_flat, cosines, sawtooth)
-
+from activations.linearspline import LinearSpline
 
 class Trainer1D:
     """
     """
     def __init__(self, config, seed, device):
         self.config = config
-        self.seed = seed
         self.device = device
 
         # Prepare dataset
         if config["dataset"]["function_type"] == "slope_1_ae":
-            function = lambda x: slope_1_ae(x, config["dataset"]["number_knots"], self.seed)
+            function = lambda x: slope_1_ae(x, config["dataset"]["number_knots"], seed)
         elif config["dataset"]["function_type"] == "slope_1_flat":
-            function = lambda x: slope_1_flat(x, config["dataset"]["number_knots"], self.seed)
+            function = lambda x: slope_1_flat(x, config["dataset"]["number_knots"], seed)
         elif config['dataset']['function_type'] == 'cosines':
             function = lambda x: cosines(x)
         elif config['dataset']['function_type'] == 'sawtooth':

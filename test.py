@@ -9,11 +9,11 @@ from architectures.simple_cnn import SimpleCNN
 from utils import metrics, utilities, spline_utils
 
 device = 'cuda:0'
-val_dataset = BSD500("/home/ducotter/PnP/data/test.h5")
+val_dataset = BSD500("data/test.h5")
 val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=1)
 tbar_val = tqdm(val_dataloader, ncols=130, position=0, leave=True)
 
-EXP_NAME1 = 'sigma_5/DS_layer_5_channel_64_region_50_spectral_norm_sigma_5/'
+EXP_NAME1 = 'sigma_10/PReLU_layer_5_channel_68_spectral_norm_sigma_10/'
 EXP_NAME2 = 'sigma_5/HH_layer_5_channel_64_spectral_norm_sigma_5/'
 
 infos1 = torch.load('denoising_exps/' + EXP_NAME1 + 'checkpoints/checkpoint_best_epoch.pth')
@@ -29,9 +29,11 @@ model2 = SimpleCNN(config2['net_params'], **config2['activation_fn_params']).to(
 model2.load_state_dict(infos2['state_dict'])
 model2.eval()
 
-sigma = 5
+sigma = 10
 psnr_val_diffs = []
 ssim_val_diffs = []
+psnr_val = []
+ssim_val = []
 
 for batch_idx, data in enumerate(tbar_val):
     data = data.to(device)
@@ -43,9 +45,13 @@ for batch_idx, data in enumerate(tbar_val):
     out_val1 = torch.clamp(output1, 0., 1.)
     out_val2 = torch.clamp(output2, 0., 1.)
 
+    psnr_val.append(utilities.batch_PSNR(out_val1, data, 1.))
+    ssim_val.append(utilities.batch_SSIM(out_val1, data, 1.))
     psnr_val_diffs.append(utilities.batch_PSNR(out_val1, data, 1.)-utilities.batch_PSNR(out_val2, data, 1.))
     ssim_val_diffs.append(utilities.batch_SSIM(out_val1, data, 1.)-utilities.batch_SSIM(out_val2, data, 1.))
 
+print(np.mean(psnr_val))
+print(np.mean(ssim_val))
 fig, ax = plt.subplots()
 ax.grid()
 ax.hist(psnr_val_diffs, bins=[-0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5])

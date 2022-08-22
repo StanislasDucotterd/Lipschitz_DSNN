@@ -186,10 +186,10 @@ class BaseModel(nn.Module):
                     nn.init.xavier_normal_(module.weight)
                 elif init_type == 'Xavier_uniform':
                     nn.init.xavier_uniform_(module.weight)
-                elif init_type == 'custom_normal':
-                    # custom Gauss(0, 0.05) weight initialization
-                    module.weight.data.normal_(0, 0.05)
-                    module.bias.data.zero_()
+                elif init_type == 'orthonormal':
+                    stdv = 1. / np.sqrt(module.weight.size(1))
+                    nn.init.orthogonal_(module.weight, gain=stdv)
+                    module.bias.data.uniform_(-stdv, stdv)
                 elif init_type == 'identity':
                     if isinstance(module, nn.Conv2d):
                         # initialize weights close to identity with some small additional noise

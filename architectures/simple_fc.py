@@ -27,10 +27,12 @@ class SimpleFC(BaseModel):
         elif network_parameters['projection'] == 'l2_norm':
             projection = l2_normalization_fc
         elif network_parameters['projection'] == 'orthonormalize':
-            projection = bjorck_orthonormalize_fc
-        elif network_parameters['projection'] == 'ortho_1_l2_norm':
-            #bjorck on all layers except the last one
-            projection = bjorck_orthonormalize_fc
+            if 'bjorck_iter' in network_parameters:
+                def proj(weights, lipschitz_goal):
+                    return bjorck_orthonormalize_fc(weights, lipschitz_goal, beta=0.5, iters=network_parameters['bjorck_iter'])
+                projection = proj
+            else:
+                projection = bjorck_orthonormalize_fc
         else:
             raise ValueError('Projection type is not valid')
 
@@ -47,11 +49,7 @@ class SimpleFC(BaseModel):
                 modules.append(self.init_activation(('fc', layer_sizes[i+1])))
 
 
-            # Last block
-            if network_parameters['projection'] == 'ortho_1_l2_norm':
-                modules.append(LipschitzLinear(lipschitz, l2_normalization_fc, layer_sizes[-2], layer_sizes[-1]))
-            else:
-                modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[-2], layer_sizes[-1]))
+            modules.append(LipschitzLinear(lipschitz, projection, layer_sizes[-2], layer_sizes[-1]))
 
         self.initialization(init_type=network_parameters['weight_initialization'])
         self.num_params = self.get_num_params()
