@@ -22,9 +22,6 @@ class TrainerWasserstein:
         train_dataset = MNIST(config['training_options']['train_dataset_file'])
         val_dataset = MNIST(config['training_options']['val_dataset_file'])
         self.mnist_generator = MnistGenerator(device=self.device)
-        
-        self.dirac = Dirac(dim=784, center=0, device=self.device)
-        self.l2_ball= L2Ball(dim=784, center=0, device=self.device)
 
         print('Preparing the dataloaders')
         # Prepare dataloaders 
@@ -116,7 +113,7 @@ class TrainerWasserstein:
         log = {}
         tbar = tqdm(self.train_dataloader, ncols=135, position=0, leave=True)
         for batch_idx, data in enumerate(tbar):
-            data_p1 = data[0].reshape(-1, 784).to(self.device)
+            data_p1 = data[0].to(self.device).reshape(-1, 784)
             data_p2 = self.mnist_generator(self.batch_size).reshape(-1, 784)
             # data_p1 = self.dirac(self.batch_size)
             # data_p2 = self.l2_ball(self.batch_size)
@@ -158,7 +155,7 @@ class TrainerWasserstein:
         
         with torch.no_grad():
             for batch_idx, data in enumerate(tbar):
-                data_p1 = data[0].reshape(-1, 784).to(self.device)
+                data_p1 = data[0].to(self.device).reshape(-1, 784)
                 data_p2 = self.mnist_generator(60).reshape(-1, 784)
                 # data_p1 = self.dirac(60)
                 # data_p2 = self.l2_ball(60)
