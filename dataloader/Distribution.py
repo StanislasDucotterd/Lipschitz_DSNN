@@ -75,4 +75,4 @@ class MNIST(Dataset):
         return self.input.shape[0]
 
     def __getitem__(self, idx):
-        return self.input[idx,:,:,:] / 255, self.target[idx]
+        return self.input[idx,:,:,:], self.target[idx]

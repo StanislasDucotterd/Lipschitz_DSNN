@@ -47,6 +47,15 @@ def sawtooth(x):
     
     return sawtooth(x) - 0.125 
 
+def threshold(x):
+    tau = 1/20
+    if x <= -tau:
+        return x + 2*tau
+    elif x <= tau:
+        return -x
+    else:
+        return x - 2*tau 
+
 def generate_testing_set(f, n_points):
     X = np.linspace(-1.0, 1.0, n_points).astype(np.float32)
     y = np.vectorize(f, otypes=[np.float32])(X)

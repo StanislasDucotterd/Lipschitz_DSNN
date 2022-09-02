@@ -10,7 +10,7 @@ from utils import metrics, utilities, spline_utils
 import matplotlib.pyplot as plt
 from layers.lipschitzlinear import LipschitzLinear
 from dataloader.Function_1D import (Function1D, generate_testing_set,
-     slope_1_ae, slope_1_flat, cosines, sawtooth)
+     slope_1_ae, slope_1_flat, cosines, threshold)
 from activations.linearspline import LinearSpline
 
 class Trainer1D:
@@ -27,8 +27,8 @@ class Trainer1D:
             function = lambda x: slope_1_flat(x, config["dataset"]["number_knots"], seed)
         elif config['dataset']['function_type'] == 'cosines':
             function = lambda x: cosines(x)
-        elif config['dataset']['function_type'] == 'sawtooth':
-            function = lambda x: sawtooth(x)
+        elif config['dataset']['function_type'] == 'threshold':
+            function = lambda x: threshold(x)
         else:
             raise NameError('Invalid Function Type')
 

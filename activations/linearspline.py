@@ -15,7 +15,7 @@ def slope_clipping(cs, T):
 
     return new_cs
 
-def initialize_coeffs(init, grid_tensor, grid):
+def initialize_coeffs(init, grid_tensor, grid, size):
         """The coefficients are initialized with the value of the activation
         # at each knot (c[k] = f[k], since B1 splines are interpolators)."""
         
@@ -25,6 +25,19 @@ def initialize_coeffs(init, grid_tensor, grid):
             coefficients = F.relu(grid_tensor)
         elif init == 'absolute_value':
             coefficients = torch.abs(grid_tensor)
+
+        elif init == 'twotooth':
+            coefficients = torch.zeros_like(grid_tensor)
+            if size % 4 == 1:
+                quarter = (size - 1) // 4
+                coefficients[:,quarter:3*quarter+1] = torch.abs(grid_tensor[:,quarter:3*quarter+1])
+                coefficients[:,:quarter] = coefficients[:,2*quarter:3*quarter]
+                coefficients[:,3*quarter+1:] = coefficients[:,quarter+1:2*quarter+1]
+            else:
+                quarter = (size - 3) // 4
+                coefficients[:,quarter:size-quarter] = torch.abs(grid_tensor[:,quarter:size-quarter])
+                coefficients[:,:quarter] = coefficients[:,size//2+1:self.size//2+1+quarter]
+                coefficients[:,size-quarter:] = coefficients[:,quarter+1:2*quarter+1]
             
         elif init == 'maxmin':
             # initalize half of the activations with the absolute and the other half with the 
@@ -42,6 +55,9 @@ def initialize_coeffs(init, grid_tensor, grid):
             coefficients[::2,1::2] = grid / 2
             coefficients[1::2,::2] = grid / 2
             coefficients[1::2,1::2] = - grid / 2
+
+        elif init == 'random':
+            coefficients = torch.randn(grid_tensor.shape)
         
         else:
             raise ValueError('init should be in [identity, relu, absolute_value, maxmin, max_tv].')
@@ -142,7 +158,7 @@ class LinearSpline(ABC, nn.Module):
 
         # tensor with locations of spline coefficients
         self.grid_tensor = torch.linspace(-self.range_, self.range_, self.size).expand((self.num_activations, self.size))
-        coefficients = initialize_coeffs(init, self.grid_tensor, self.grid)  # spline coefficients
+        coefficients = initialize_coeffs(init, self.grid_tensor, self.grid, self.size)  # spline coefficients
         # Need to vectorize coefficients to perform specific operations
         # size: (num_activations*size)
         self.coefficients_vect = nn.Parameter(coefficients.contiguous().view(-1))

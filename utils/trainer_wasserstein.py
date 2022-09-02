@@ -20,14 +20,14 @@ class TrainerWasserstein:
 
         # Prepare dataset classes
         train_dataset = MNIST(config['training_options']['train_dataset_file'])
-        val_dataset = MNIST(config['training_options']['val_dataset_file'])
         self.mnist_generator = MnistGenerator(device=self.device)
 
         print('Preparing the dataloaders')
         # Prepare dataloaders 
         self.train_dataloader = DataLoader(train_dataset, batch_size=config["training_options"]["batch_size"], shuffle=True, num_workers=config["training_options"]["num_workers"], drop_last=True)
         self.batch_size = config["training_options"]["batch_size"]
-        self.val_dataloader = DataLoader(val_dataset, batch_size=60, shuffle=False, num_workers=1)
+        self.val_dataset, _ = torch.load(config['training_options']['val_dataset_file'])
+        self.val_dataset = self.val_dataset.unsqueeze(1)
 
         print('Building the model')
         # Build the model
@@ -113,10 +113,10 @@ class TrainerWasserstein:
         log = {}
         tbar = tqdm(self.train_dataloader, ncols=135, position=0, leave=True)
         for batch_idx, data in enumerate(tbar):
-            data_p1 = data[0].to(self.device).reshape(-1, 784)
-            data_p2 = self.mnist_generator(self.batch_size).reshape(-1, 784)
+            data_p1 = data[0].to(self.device).view(-1, 784) / 255
+            data_p2 = self.mnist_generator(self.batch_size).view(-1, 784)
             # data_p1 = self.dirac(self.batch_size)
-            # data_p2 = self.l2_ball(self.batch_size)
+            # data_p2 = self.l2ball(self.batch_size)
             self.optimizer.zero_grad()
 
             wassserstein_loss = -1 * (torch.mean(self.model(data_p1)) - torch.mean(self.model(data_p2)))
@@ -150,17 +150,12 @@ class TrainerWasserstein:
     def valid_epoch(self, epoch):
         
         self.model.eval()
-        mean_wasserstein_distance = 0.0
-        tbar = tqdm(self.val_dataloader, ncols=135, position=0, leave=True)
         
         with torch.no_grad():
-            for batch_idx, data in enumerate(tbar):
-                data_p1 = data[0].to(self.device).reshape(-1, 784)
-                data_p2 = self.mnist_generator(60).reshape(-1, 784)
-                # data_p1 = self.dirac(60)
-                # data_p2 = self.l2_ball(60)
+            data_p1 = self.val_dataset.to(self.device).view(-1, 784) / 255
+            data_p2 = self.mnist_generator(6000).view(-1, 784)
 
-                mean_wasserstein_distance += (torch.mean(self.model(data_p1)) - torch.mean(self.model(data_p2))) / 100
+            mean_wasserstein_distance = (torch.mean(self.model(data_p1)) - torch.mean(self.model(data_p2)))
 
             # METRICS TO TENSORBOARD
             self.wrt_mode = 'val'
@@ -174,11 +169,13 @@ class TrainerWasserstein:
                     y = module.lipschitz_coefficients
                     figures_list = []
                     for kk in range(x.shape[0]):
-                        fig, ax = plt.subplots()
-                        ax.grid()
+                        if kk % 16 == 0:
+                            fig, ax = plt.subplots()
+                            ax.grid()
                         ax.plot(x[kk,:].cpu().numpy(), y[kk,:].cpu().numpy())
-                        figures_list.append(fig)
-                        plt.close()
+                        if kk % 16 == 0:
+                            figures_list.append(fig)
+                            plt.close()
                     self.writer.add_figure(' Activation functions layer ' + str(j), figures_list, global_step=epoch)
                     j += 1
         

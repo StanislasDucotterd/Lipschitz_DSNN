@@ -53,4 +53,4 @@ def bjorck_orthonormalize_fc(weights, lipschitz_goal, beta=0.5, iters=15):
         w = (1 + beta) * w - beta * w.mm(w_t_w)
     new_weights = lipschitz_goal * w
 
-    return new_weights
+    return w

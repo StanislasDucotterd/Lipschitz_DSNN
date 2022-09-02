@@ -11,6 +11,5 @@ class LipschitzLinear(Linear):
         self.projection = projection
         
     def forward(self, x):
-        #Some projection methods need to also update the maximum eigenvector
         lipschitz_weight = self.projection(self.weight, self.lipschitz)
         return F.linear(x, lipschitz_weight, self.bias)

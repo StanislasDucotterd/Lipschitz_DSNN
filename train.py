@@ -17,21 +17,20 @@ def main(args):
         trainer_inst = TrainerDenoiser(config, args.device)
     elif args.exp == '1d':
         config = json.load(open('configs/config_1d.json'))
-        trainer_inst = Trainer1D(config, seed, args.device)
+        trainer_inst = Trainer1D(config, config['seed'], args.device)
     elif args.exp == 'wasserstein':
         config = json.load(open('configs/config_wasserstein.json'))
         trainer_inst = TrainerWasserstein(config, args.device)
     else:
         raise ValueError('Need to provide a valid exp name')
-
     
     exp_dir = os.path.join(config['log_dir'], config['exp_name'])
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
     
-    seed = config['seed']
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed) 
+    torch.manual_seed(config['seed'])
+    torch.cuda.manual_seed(config['seed']) 
+    torch.set_num_threads(1)
 
     trainer_inst.train()
 
