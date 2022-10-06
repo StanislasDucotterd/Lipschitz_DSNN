@@ -4,11 +4,10 @@ import json
 import math
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from dataloader.Distribution import MNIST, MnistGenerator, L2Ball, Dirac
+from dataloader.Distribution import MNIST, MnistGenerator
 from torch.utils import tensorboard
 from architectures.simple_fc import SimpleFC
 from utils import metrics, utilities, spline_utils
-from utils.aggmo import AggMo
 import matplotlib.pyplot as plt
 
 class TrainerWasserstein:
@@ -62,29 +61,16 @@ class TrainerWasserstein:
     def set_optimization(self):
         """Initialize the optmizer"""
 
-        optim_name = self.config["optimizer"]["type"]
-        if optim_name == 'Adam':
-            optimizer_type = torch.optim.Adam
-        elif optim_name == 'SGD':
-            optimizer_type = torch.optim.SGD
-        elif optim_name == 'RMSprop':
-            optimizer_type = torch.optim.RMSprop
-        elif optim_name == 'AggMo':
-            optimizer_type = AggMo
-        else:
-            raise ValueError('Need to provide a valid optimizer type')
 
         params_list = [{'params': spline_utils.get_no_spline_coefficients(self.model), 'lr': self.config["optimizer"]["lr_weights"]}]
         if self.model.using_splines:
             params_list.append({'params': spline_utils.get_spline_coefficients(self.model), \
                                 'lr': self.config["optimizer"]["lr_spline_coeffs"]})
 
-            if self.config["activation_fn_params"]["spline_scaling_coeff"]:
-                params_list.append({'params': spline_utils.get_spline_scaling_coeffs(self.model), \
-                                    'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
+            params_list.append({'params': spline_utils.get_spline_scaling_coeffs(self.model), \
+                                'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
 
-        self.optimizer = optimizer_type(params_list)
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, self.config['scheduler_gamma'])
+        self.optimizer = torch.optim.Adam(params_list)
         
 
     def train(self):
@@ -115,16 +101,14 @@ class TrainerWasserstein:
         for batch_idx, data in enumerate(tbar):
             data_p1 = data[0].to(self.device).view(-1, 784) / 255
             data_p2 = self.mnist_generator(self.batch_size).view(-1, 784)
-            # data_p1 = self.dirac(self.batch_size)
-            # data_p2 = self.l2ball(self.batch_size)
             self.optimizer.zero_grad()
 
             wassserstein_loss = -1 * (torch.mean(self.model(data_p1)) - torch.mean(self.model(data_p2)))
                 
             # regularization
             regularization = torch.zeros_like(wassserstein_loss)
-            if self.model.using_splines and self.config['training_options']['lmbda'] > 0:
-                regularization = self.config['training_options']['lmbda'] * self.model.TV2()
+            if self.model.using_splines and self.config['activation_fn_params']['lmbda'] > 0:
+                regularization = self.config['activation_fn_params']['lmbda'] * self.model.TV2()
 
             total_loss = wassserstein_loss + regularization
             total_loss.backward()
@@ -132,8 +116,7 @@ class TrainerWasserstein:
                 
             log['train_loss'] = total_loss.detach().cpu().item()
 
-            #if self.total_training_step % (10 * 128 // self.batch_size)  == 0:
-            if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.model.using_splines:
+            if self.model.using_splines:
                 spline_scaling_coeffs = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
                 log['spline_scaling_coeff_mean'] = torch.mean(spline_scaling_coeffs).cpu().item()
                 log['spline_scaling_coeff_std'] = torch.std(spline_scaling_coeffs).cpu().item()

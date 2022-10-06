@@ -25,19 +25,6 @@ def initialize_coeffs(init, grid_tensor, grid, size):
             coefficients = F.relu(grid_tensor)
         elif init == 'absolute_value':
             coefficients = torch.abs(grid_tensor)
-
-        elif init == 'twotooth':
-            coefficients = torch.zeros_like(grid_tensor)
-            if size % 4 == 1:
-                quarter = (size - 1) // 4
-                coefficients[:,quarter:3*quarter+1] = torch.abs(grid_tensor[:,quarter:3*quarter+1])
-                coefficients[:,:quarter] = coefficients[:,2*quarter:3*quarter]
-                coefficients[:,3*quarter+1:] = coefficients[:,quarter+1:2*quarter+1]
-            else:
-                quarter = (size - 3) // 4
-                coefficients[:,quarter:size-quarter] = torch.abs(grid_tensor[:,quarter:size-quarter])
-                coefficients[:,:quarter] = coefficients[:,size//2+1:self.size//2+1+quarter]
-                coefficients[:,size-quarter:] = coefficients[:,quarter+1:2*quarter+1]
             
         elif init == 'maxmin':
             # initalize half of the activations with the absolute and the other half with the 
@@ -46,18 +33,6 @@ def initialize_coeffs(init, grid_tensor, grid, size):
             coefficients = torch.zeros(grid_tensor.shape)
             coefficients[::2, :] = (grid_tensor[::2, :]).abs()
             coefficients[1::2, :] = grid_tensor[1::2, :]
-
-        elif init == 'max_tv':
-            # initialize the spline such that its tv is maximized
-            # while being 1-Lipschitz
-            coefficients = torch.zeros(grid_tensor.shape)
-            coefficients[::2,::2] = - grid / 2
-            coefficients[::2,1::2] = grid / 2
-            coefficients[1::2,::2] = grid / 2
-            coefficients[1::2,1::2] = - grid / 2
-
-        elif init == 'random':
-            coefficients = torch.randn(grid_tensor.shape)
         
         else:
             raise ValueError('init should be in [identity, relu, absolute_value, maxmin, max_tv].')
@@ -129,11 +104,11 @@ class LinearSpline(ABC, nn.Module):
         size (int): number of coefficients of spline grid; the number of knots K = size - 2.
         range_ (float) : positive range of the B-spline expansion. B-splines range = [-range_, range_].
         init (str): Function to initialize activations as (e.g. 'relu', 'identity', 'absolute_value').
-        lipschitz_constraint (bool): Constrain the activation to be 1-Lipschitz
+        lipschitz_constrained (bool): Constrain the activation to be 1-Lipschitz
     """
 
     def __init__(self, mode, num_activations, size, range_, init,
-                 lipschitz_constraint, **kwargs):
+                 lipschitz_constrained, **kwargs):
 
         if mode not in ['conv', 'fc']:
             raise ValueError('Mode should be either "conv" or "fc".')
@@ -154,7 +129,7 @@ class LinearSpline(ABC, nn.Module):
 
         self.init_zero_knot_indexes()
         self.D2_filter = Tensor([1, -2, 1]).view(1, 1, 3).div(self.grid)
-        self.lipschitz_constraint = lipschitz_constraint
+        self.lipschitz_constrained = lipschitz_constrained
 
         # tensor with locations of spline coefficients
         self.grid_tensor = torch.linspace(-self.range_, self.range_, self.size).expand((self.num_activations, self.size))
@@ -197,7 +172,7 @@ class LinearSpline(ABC, nn.Module):
         """
         D2_filter = self.D2_filter.to(device=self.coefficients.device)
 
-        if self.lipschitz_constraint:
+        if self.lipschitz_constrained:
             slopes = F.conv1d(self.lipschitz_coefficients.unsqueeze(1), D2_filter).squeeze(1)
         else:
             slopes = F.conv1d(self.coefficients.unsqueeze(1), D2_filter).squeeze(1)
@@ -253,7 +228,7 @@ class LinearSpline(ABC, nn.Module):
 
         x = x.mul(self.scaling_coeffs_vect)
 
-        if self.lipschitz_constraint:
+        if self.lipschitz_constrained:
             output = LinearSpline_Func.apply(x, self.lipschitz_coefficients_vect, grid, zero_knot_indexes, \
                                         self.size, self.even)
 
@@ -272,7 +247,7 @@ class LinearSpline(ABC, nn.Module):
 
         s = ('mode={mode}, num_activations={num_activations}, '
              'init={init}, size={size}, grid={grid[0]:.3f}, '
-             'lipschitz_constraint={lipschitz_constraint}.')
+             'lipschitz_constrained={lipschitz_constrained}.')
 
         return s.format(**self.__dict__)
 

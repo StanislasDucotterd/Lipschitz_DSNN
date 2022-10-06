@@ -11,30 +11,6 @@ def identity(weights, lipschitz_goal):
     """no projection"""
     return weights
 
-def l1_normalization_fc(weights, lipschitz_goal):
-    current_lipschitz = torch.linalg.matrix_norm(weights, 1)
-    new_weights = lipschitz_goal * weights / current_lipschitz
-
-    return new_weights
-
-def l1_projection_fc(weights, lipschitz_goal):
-    column_norms = torch.linalg.vector_norm(weights, 1, axis=0).unsqueeze(0)
-    new_weights = weights / torch.clip(column_norms / lipschitz_goal, 1)
-
-    return new_weights
-
-def linf_normalization_fc(weights, lipschitz_goal):
-    current_lipschitz = torch.linalg.matrix_norm(weights, float('inf'))
-    new_weights = lipschitz_goal * weights / current_lipschitz
-
-    return new_weights
-
-def linf_projection_fc(weights, lipschitz_goal):
-    row_norms = torch.linalg.vector_norm(weights, 1, axis=1).unsqueeze(1)
-    new_weights = weights / torch.clip(row_norms / lipschitz_goal, 1)
-
-    return new_weights
-
 def l2_normalization_fc(weights, lipschitz_goal):
     current_lipschitz = torch.linalg.matrix_norm(weights, 2)
     new_weights = lipschitz_goal * weights / current_lipschitz

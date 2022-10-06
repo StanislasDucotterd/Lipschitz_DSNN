@@ -3,13 +3,6 @@ import torch.nn as nn
 from torch import Tensor
 import torch.nn.functional as F
 
-class Identity(torch.nn.Module):
-
-    def __init__(self):
-        super(Identity, self).__init__()
-
-    def forward(self, input: Tensor) -> Tensor:
-        return input
 
 class AbsoluteValue(torch.nn.Module):
 
@@ -25,7 +18,13 @@ class LipschitzPReLU(torch.nn.Module):
                  device=None, dtype=None) -> None:
         self.num_parameters = num_parameters
         super(LipschitzPReLU, self).__init__()
-        self.weight = nn.Parameter(torch.empty(num_parameters).fill_(init))
+        if init == 'maxmin':
+            weight = torch.empty(num_parameters)
+            weight[::2] = 1
+            weight[1::2] = -1
+            self.weight = nn.Parameter(weight)
+        else:
+            self.weight = nn.Parameter(torch.empty(num_parameters).fill_(init))
 
     def forward(self, input: Tensor) -> Tensor:
         return F.prelu(input, torch.clip(self.weight, -1, 1))

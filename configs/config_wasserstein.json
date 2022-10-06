@@ -1,0 +1,39 @@
+{
+    "activation_fn_params": {
+        "activation_type": "linearspline",
+        "groupsort_groupsize": 2,
+        "lipschitz_constrained": true,
+        "prelu_init": "maxmin",
+        "spline_init": "absolute_value",
+        "spline_range": 0.15,
+        "spline_size": 21,
+        "lmbda": 1e-10
+    },
+    "exp_name": "DS_depth_3_width_1024_region_20_range_0.15_lambda_1e-10",
+    "log_dir": "wasserstein_exps",
+    "net_params": {
+        "bias": true,
+        "bjorck_iter": 25,
+        "layer_sizes": [
+            784,
+            1024,
+            1024,
+            1
+        ],
+        "projection": "orthonormalize",
+        "weight_initialization": "orthonormal"
+    },
+    "optimizer": {
+        "lr_spline_coeffs": 5e-05,
+        "lr_spline_scaling_coeffs": 0.0005,
+        "lr_weights": 0.002
+    },
+    "seed": 42,
+    "training_options": {
+        "batch_size": 4096,
+        "epochs": 1600,
+        "num_workers": 1,
+        "train_dataset_file": "data/mnist/train.pt",
+        "val_dataset_file": "data/mnist/val.pt"
+    }
+}

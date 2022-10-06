@@ -19,14 +19,14 @@ class TrainerDenoiser:
         self.sigma = config['sigma']
 
         # Prepare dataset classes
-        train_dataset = BSD500(config['train_dataloader']['train_data_file'])
-        val_dataset = BSD500(config['val_dataloader']['val_data_file'])
+        train_dataset = BSD500(config['training_options']['train_data_file'])
+        val_dataset = BSD500(config['training_options']['val_data_file'])
 
         print('Preparing the dataloaders')
         # Prepare dataloaders 
-        self.train_dataloader = DataLoader(train_dataset, batch_size=config["train_dataloader"]["batch_size"], shuffle=config["train_dataloader"]["shuffle"], num_workers=config["train_dataloader"]["num_workers"], drop_last=True)
-        self.batch_size = config["train_dataloader"]["batch_size"]
-        self.val_dataloader = DataLoader(val_dataset, batch_size=config["val_dataloader"]["batch_size"], shuffle=config["val_dataloader"]["shuffle"], num_workers=config["val_dataloader"]["num_workers"])
+        self.train_dataloader = DataLoader(train_dataset, batch_size=config["training_options"]["batch_size"], shuffle=True, num_workers=config["training_options"]["num_workers"], drop_last=True)
+        self.batch_size = config["training_options"]["batch_size"]
+        self.val_dataloader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=1)
 
         print('Building the model')
         # Build the model
@@ -59,34 +59,21 @@ class TrainerDenoiser:
         writer_dir = os.path.join(config['log_dir'], config["exp_name"], 'tensorboard_logs')
         self.writer = tensorboard.SummaryWriter(writer_dir)
 
-        self.total_number_channels = (config["net_params"]["num_layers"] - 1) * config["net_params"]["num_channels"]
         self.total_training_step = 0
 
        
     def set_optimization(self):
         """Initialize the optmizer"""
 
-        optim_name = self.config["optimizer"]["type"]
-        if optim_name == 'Adam':
-            optimizer_type = torch.optim.Adam
-        elif optim_name == 'SGD':
-            optimizer_type = torch.optim.SGD
-        elif optim_name == 'RMSprop':
-            optimizer_type = torch.optim.RMSprop
-        else:
-            raise ValueError('Need to provide a valid optimizer type')
-
         params_list = [{'params': spline_utils.get_no_spline_coefficients(self.model), 'lr': self.config["optimizer"]["lr_weights"]}]
         if self.model.using_splines:
             params_list.append({'params': spline_utils.get_spline_coefficients(self.model), \
                                 'lr': self.config["optimizer"]["lr_spline_coeffs"]})
 
-            if self.config["activation_fn_params"]["spline_scaling_coeff"]:
-                params_list.append({'params': spline_utils.get_spline_scaling_coeffs(self.model), \
-                                    'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
+            params_list.append({'params': spline_utils.get_spline_scaling_coeffs(self.model), \
+                                'lr': self.config["optimizer"]["lr_spline_scaling_coeffs"]})
 
-        self.optimizer = optimizer_type(params_list)
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, self.config['scheduler_gamma'])
+        self.optimizer = torch.optim.Adam(params_list)
         
 
     def train(self):
@@ -94,13 +81,14 @@ class TrainerDenoiser:
         best_psnr = 0
         self.model.train()
         for epoch in range(self.epochs+1):
-
+            
+            #We do only one power iteration for the first 90% of the training and do five of them for the last 10%
+            #We keep the epoch with the best validation results among the 10% with five iters
             if epoch >= self.epochs * 0.9:
                 self.model.set_end_of_training()
 
-            epoch_results = self.train_epoch(epoch)
+            self.train_epoch(epoch)
             val_epoch_results = self.valid_epoch(epoch)
-            self.scheduler.step()        
                 
             # SAVE CHECKPOINT
             if val_epoch_results['val_psnr'] > best_psnr and epoch >= self.epochs * 0.9:
@@ -131,8 +119,8 @@ class TrainerDenoiser:
                 
             # regularization
             regularization = torch.zeros_like(data_fidelity)
-            if self.model.using_splines and self.config['training_options']['lmbda'] > 0:
-                regularization = self.config['training_options']['lmbda'] * self.model.TV2()
+            if self.model.using_splines and self.config['activation_fn_params']['lmbda'] > 0:
+                regularization = self.config['activation_fn_params']['lmbda'] * self.model.TV2()
 
             total_loss = data_fidelity + regularization
             total_loss.backward()
@@ -140,8 +128,10 @@ class TrainerDenoiser:
                 
             log['train_loss'] = total_loss.detach().cpu().item()
 
+            # We report the metrics after the network has seen a certain amount of data
+            # This was done to compare the training loss with different gradient steps
             if self.total_training_step % (10 * 128 // self.batch_size)  == 0:
-                if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.model.using_splines:
+                if self.model.using_splines:
                     spline_scaling_coeffs = torch.nn.utils.parameters_to_vector(spline_utils.get_spline_scaling_coeffs(self.model))
                     log['spline_scaling_coeff_mean'] = torch.mean(spline_scaling_coeffs).cpu().item()
                     log['spline_scaling_coeff_std'] = torch.std(spline_scaling_coeffs).cpu().item()
@@ -152,8 +142,6 @@ class TrainerDenoiser:
 
             tbar.set_description('T ({}) | TotalLoss {:.5f} |'.format(epoch, log['train_loss'])) 
             self.total_training_step += 1
-
-        return log
 
     def valid_epoch(self, epoch):
         

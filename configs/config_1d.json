@@ -1,0 +1,45 @@
+{
+    "activation_fn_params": {
+        "activation_type": "linearspline",
+        "groupsort_groupsize": 5,
+        "prelu_init": -1,
+        "lipschitz_constrained": true,
+        "spline_init": "relu",
+        "spline_range": 0.5,
+        "spline_scaling_coeff": true,
+        "spline_size": 101,
+        "lmbda": 1e-7
+    },
+    "dataset": {
+        "function_type": "f1",
+        "number_knots": 9,
+        "testing_dataset_size": 10000,
+        "training_dataset_size": 1000
+    },
+    "exp_name": "test",
+    "log_dir": "1d_exps/ortho",
+    "net_params": {
+        "bias": true,
+        "layer_sizes": [
+            1,
+            10,
+            10,
+            10,
+            1
+        ],
+        "projection": "orthonormalize",
+        "weight_initialization": "He_uniform"
+    },
+    "optimizer": {
+        "lr_spline_coeffs": 5e-05,
+        "lr_spline_scaling_coeffs": 0.0005,
+        "lr_weights": 0.002
+    },
+    "seed": 5,
+    "training_options": {
+        "batch_size": 10,
+        "epochs": 1000,
+        "nbr_models": 25,
+        "num_workers": 1
+    }
+}

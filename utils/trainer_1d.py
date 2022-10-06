@@ -13,6 +13,12 @@ from dataloader.Function_1D import (Function1D, generate_testing_set,
      slope_1_ae, slope_1_flat, cosines, threshold)
 from activations.linearspline import LinearSpline
 
+def slope_normalization(cs, T):
+    lipschitz = torch.max(torch.abs(cs[:, 1:] - cs[:,:-1]), dim=1)[0]
+    new_cs = T * torch.div(cs.T, lipschitz).T
+
+    return new_cs
+
 class Trainer1D:
     """
     """
@@ -21,14 +27,12 @@ class Trainer1D:
         self.device = device
 
         # Prepare dataset
-        if config["dataset"]["function_type"] == "slope_1_ae":
+        if config["dataset"]["function_type"] == "f1":
             function = lambda x: slope_1_ae(x, config["dataset"]["number_knots"], seed)
-        elif config["dataset"]["function_type"] == "slope_1_flat":
+        elif config["dataset"]["function_type"] == "f2":
             function = lambda x: slope_1_flat(x, config["dataset"]["number_knots"], seed)
-        elif config['dataset']['function_type'] == 'cosines':
+        elif config['dataset']['function_type'] == 'f3':
             function = lambda x: cosines(x)
-        elif config['dataset']['function_type'] == 'threshold':
-            function = lambda x: threshold(x)
         else:
             raise NameError('Invalid Function Type')
 
@@ -94,13 +98,11 @@ class Trainer1D:
 
     def train(self):
 
-        min_val_loss = 1e8
         for epoch in range(self.epochs+1):
-            epoch_results = self.train_epoch(epoch)
-            val_epoch_results = self.valid_epoch(epoch)
-            if val_epoch_results < min_val_loss:
-                self.save_checkpoint(epoch)
-                min_val_loss = val_epoch_results
+            self.train_epoch(epoch)
+            self.valid_epoch(epoch)
+
+        self.save_checkpoint(epoch)
         
         self.writer.flush()
         self.writer.close()
@@ -133,9 +135,9 @@ class Trainer1D:
             
             # regularization
             regularizations = self.nbr_models * [torch.zeros_like(data_fidelities[0])]
-            if self.models[0].using_splines and self.config['training_options']['lmbda'] > 0:
+            if self.models[0].using_splines and self.config['activation_fn_params']['lmbda'] > 0:
                 for i in range(self.nbr_models):
-                    regularization = self.config['training_options']['lmbda'] * self.models[i].TV2()
+                    regularization = self.config['activation_fn_params']['lmbda'] * self.models[i].TV2()
                     regularizations[i] = regularization
 
             total_losses = []
@@ -151,6 +153,8 @@ class Trainer1D:
                 mean_total_loss += total_losses[i].detach().cpu().item()  
             log['Mean train loss'] = mean_total_loss / self.nbr_models
 
+            # We report the metrics after the network has seen a certain amount of data
+            # This was done to compare the training loss with different gradient steps
             if self.total_training_step % (100 // self.batch_size)  == 0:
 
                 if self.config["activation_fn_params"]["spline_scaling_coeff"] & self.models[0].using_splines:
@@ -169,13 +173,23 @@ class Trainer1D:
             tbar.set_description('T ({}) | TotalLoss {:.8f} |'.format(epoch, log['Mean train loss']))
             self.total_training_step += 1
 
-        return log
-
     
     def optimizer_step(self):
         """ """
         for i in range(len(self.optimizers)):
             self.optimizers[i].step()
+
+        # This is done the get the resuls of LS Old 
+        if self.models[0].using_splines and not self.config['activation_fn_params']['lipschitz_constrained']:
+            for i in range(len(self.models)):
+                for j, module in enumerate(self.models[i].modules_linearspline):
+                    num_act = module.num_activations
+                    size = module.size
+                    grid = module.grid
+                    coeffs = module.coefficients_vect.view(num_act, size)
+                    new_coeffs = slope_normalization(coeffs, grid.item())
+                    self.models[i].layers[2*j+1].coefficients_vect.data = new_coeffs.contiguous().view(-1)
+                
 
 
     def valid_epoch(self, epoch):
@@ -204,7 +218,8 @@ class Trainer1D:
 
             self.test_mse = torch.tensor(losses)
 
-            if epoch %  100== 0:
+            #We plot the learned activation functions every 100 epochs
+            if epoch %  100 == 0:
                 figures_list = []
                 for i in range(3):
                     fig, ax = plt.subplots()

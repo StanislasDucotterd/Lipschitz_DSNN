@@ -1,0 +1,38 @@
+{
+    "activation_fn_params": {
+        "activation_type": "linearspline",
+        "groupsort_groupsize": 2,
+        "prelu_init": -1,
+        "lipschitz_constrained": true,
+        "spline_init": "identity",
+        "spline_range": 0.1,
+        "spline_size": 51,
+        "lmbda": 1e-6
+    },
+    "exp_name": "test",
+    "log_dir": "denoising_exps/sigma_5",
+    "net_params": {
+        "bias": true,
+        "kernel_size": 3,
+        "num_channels": 64,
+        "num_layers": 5,
+        "padding_mode": "zeros",
+        "projection": "spectral_norm",
+        "signal_size": 256,
+        "weight_initialization": "identity"
+    },
+    "optimizer": {
+        "lr_spline_coeffs": 1e-06,
+        "lr_spline_scaling_coeffs": 1e-05,
+        "lr_weights": 4e-05
+    },
+    "seed": 42,
+    "sigma": 5,
+    "training_options": {
+        "epochs": 20,
+        "batch_size": 4,
+        "num_workers": 1,
+        "train_data_file": "data/BSD500/train.h5",
+        "val_data_file": "data/BSD500/val.h5"
+    }
+}

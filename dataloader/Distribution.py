@@ -3,48 +3,6 @@ import torch
 from torch.utils.data import Dataset
 from architectures.simple_generator import SimpleGenerator
 
-class BaseDistribution(torch.nn.Module):
-    def __init__(self, dim, device):
-        self.dim = dim
-        self.device = device
-
-class Dirac(BaseDistribution):
-    def __init__(self, dim, center, device):
-        super().__init__(dim, device)
-        self.center = center
-
-    def __call__(self, batch_size):
-        X = torch.zeros(batch_size, self.dim, device=self.device)
-        X = X + self.center
-
-        return X
-
-class L2Ball(BaseDistribution):
-    """Sample uniformly on the L2 ball"""
-    def __init__(self, dim, center, device):
-        super().__init__(dim, device)
-        self.center = center
-
-    def __call__(self, batch_size):
-        X = torch.randn(batch_size, self.dim, device=self.device)
-        X = X / torch.linalg.norm(X, ord=2, dim=1).unsqueeze(1)
-        X = X + self.center
-
-        return X
-
-class L1Ball(BaseDistribution):
-    """Sample uniformly on the L1 ball"""
-    def __init__(self, dim, center, device):
-        super().__init__(dim, device)
-        self.center = center
-        self.distribution = torch.distributions.laplace.Laplace(torch.tensor([0.0], device=device), torch.tensor([1.0], device=device))
-
-    def __call__(self, batch_size):
-        X = self.distribution.sample((batch_size, self.dim)).squeeze()
-        X = X / torch.linalg.norm(X, ord=1, dim=1).unsqueeze(1)
-        X = X + self.center
-
-        return X
 
 class MnistGenerator(torch.nn.Module):
     """GAN Genrator of MNIST Images"""

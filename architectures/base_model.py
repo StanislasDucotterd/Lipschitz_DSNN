@@ -5,12 +5,13 @@ Wrap around nn.Module with all LinearSpline functionalities.
 
 import torch
 import math
+import numpy as np
 import torch.nn as nn
 from torch import Tensor
 from activations.linearspline import LinearSpline
 from activations.groupsort import GroupSort
 from activations.householder import HouseHolder
-from activations.basic_activations import AbsoluteValue, Identity, LipschitzPReLU
+from activations.basic_activations import AbsoluteValue, LipschitzPReLU
 
 
 class BaseModel(nn.Module):
@@ -23,7 +24,7 @@ class BaseModel(nn.Module):
                  spline_size=None,
                  spline_range=None,
                  spline_init=None,
-                 lipschitz_constraint=True,
+                 lipschitz_constrained=True,
                  groupsort_groupsize=None,
                  prelu_init=None,
                  **kwargs):
@@ -37,7 +38,7 @@ class BaseModel(nn.Module):
         self.spline_init = spline_init
         self.spline_size = spline_size
         self.spline_range = spline_range
-        self.lipschitz_constraint = lipschitz_constraint
+        self.lipschitz_constrained = lipschitz_constrained
 
         # groupsort attributes
         self.groupsort_groupsize = groupsort_groupsize
@@ -69,7 +70,7 @@ class BaseModel(nn.Module):
             for mode, num_activations in activation_specs:
                 activations.append(self.linearspline(mode=mode,
                                     num_activations=num_activations,
-                                    lipschitz_constraint=self.lipschitz_constraint,
+                                    lipschitz_constrained=self.lipschitz_constrained,
                                     size=self.spline_size,
                                     range_=self.spline_range,
                                     init=self.spline_init))
@@ -91,7 +92,6 @@ class BaseModel(nn.Module):
         """
         assert isinstance(activation_specs, tuple), \
             f'activation_specs type: {type(activation_specs)}'
-
         activation = self.init_activation_list([activation_specs], **kwargs)[0]
 
         return activation
@@ -121,10 +121,6 @@ class BaseModel(nn.Module):
         elif self.activation_type == 'absolute_value':
             for i in range(len(activation_specs)):
                 activations.append(AbsoluteValue())
-
-        elif self.activation_type == 'identity':
-            for i in range(len(activation_specs)):
-                activations.append(Identity())
 
         elif self.activation_type == 'groupsort':
             for _, num_activations in activation_specs:
@@ -187,9 +183,7 @@ class BaseModel(nn.Module):
                 elif init_type == 'Xavier_uniform':
                     nn.init.xavier_uniform_(module.weight)
                 elif init_type == 'orthonormal':
-                    stdv = 1. / np.sqrt(module.weight.size(1))
-                    nn.init.orthogonal_(module.weight, gain=stdv)
-                    module.bias.data.uniform_(-stdv, stdv)
+                    nn.init.orthogonal_(module.weight)
                 elif init_type == 'identity':
                     if isinstance(module, nn.Conv2d):
                         # initialize weights close to identity with some small additional noise
@@ -260,7 +254,7 @@ class BaseModel(nn.Module):
 
         sparsity = 0
         for module in self.modules():
-            if isinstance(module, LinearSpline):
+            if isinstance(module, LinearSpline) or isinstance(module, SphericalLinearSpline):
                 module_sparsity, _ = \
                     module.get_threshold_sparsity(float(knot_threshold))
                 sparsity += module_sparsity.sum().item()
