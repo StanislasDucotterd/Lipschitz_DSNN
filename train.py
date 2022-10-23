@@ -35,7 +35,7 @@ def main(args):
 if __name__ == '__main__':
     # PARSE THE ARGS
     parser = argparse.ArgumentParser(description='PyTorch Training')
-    parser.add_argument('-c', '--config', default='configs/config_denoiser.json', type=str, help='Choose config file')
+    parser.add_argument('-c', '--config', default='configs/config_denoising.json', type=str, help='Choose config file')
     parser.add_argument('-e', '--exp', default='denoising', type=str, help='Choose the type of experiment')
     parser.add_argument('-d', '--device', default="cpu", type=str, help='device to use')
     args = parser.parse_args()

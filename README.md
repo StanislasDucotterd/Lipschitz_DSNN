@@ -89,7 +89,7 @@ Below we detail the model hyperparameters that can be controlled in the config f
             1
         ],
         "projection": "orthonormalize",
-        "weight_initialization": "orthonormal"
+        "weight_initialization": "orthonormal" // 
     },
     "optimizer": {
         "lr_spline_coeffs": 5e-05,
