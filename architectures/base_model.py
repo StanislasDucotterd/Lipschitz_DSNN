@@ -234,29 +234,3 @@ class BaseModel(nn.Module):
                 tv2 = tv2 + module_tv2.norm(p=1)
 
         return tv2[0]  # 1-tap 1d tensor -> 0d tensor
-    
-
-    def compute_sparsity(self, knot_threshold):
-        """
-        Returns the sparsity of the activations, i.e. the number of
-        activation knots whose slope change is below knot_threshold.
-
-        Args:
-            knot_threshold (non-negative float):
-                threshold for slope change. If activations were sparsified
-                with sparsify_activations(), this value should be equal
-                to the knot_threshold used for sparsification.
-        Returns:
-            sparsity (int)
-        """
-        if float(knot_threshold) < 0:
-            raise TypeError('knot_threshold should be a positive float...')
-
-        sparsity = 0
-        for module in self.modules():
-            if isinstance(module, LinearSpline) or isinstance(module, SphericalLinearSpline):
-                module_sparsity, _ = \
-                    module.get_threshold_sparsity(float(knot_threshold))
-                sparsity += module_sparsity.sum().item()
-
-        return sparsity
