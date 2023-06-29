@@ -1,5 +1,5 @@
 # Improving Lipschitz-Constrained Neural Networks by Learning Activation Functions
-Implementation of experiments done in : https://arxiv.org/abs/number.number
+Implementation of experiments done in : https://arxiv.org/abs/2210.16222
 
 #### Description
 Lipschitz-constrained neural networks have several advantages compared to unconstrained ones and can be applied to various different problems. Consequently, they have recently attracted considerable attention in the deep learning community. However, it has been shown both theoretically and empirically that networks with ReLU activation functions perform poorly in this context. On the contrary, neural networks with learnable 1-Lipschitz linear splines are known to be more expressive in theory. We propose an efficient method to train such 1-Lipschitz deep spline neural networks. Our numerical experiments for a variety of tasks show that our trained networks match or outperform networks with activation functions specifically tailored towards Lipschitz-constrained architectures.
