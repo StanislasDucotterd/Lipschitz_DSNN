@@ -44,19 +44,14 @@ Below we detail the model hyperparameters for the denoising experiment that can 
         "spline_init": "identity",              // can be identity/relu/absolute_value/maxmin
         "spline_range": 0.1,
         "spline_size": 51,                      // number of linear regions +1
-        "lmbda": 1e-6                           // TV2 reg 
+        "lmbda": 1e-6                           // TV2 reg for the linear splines
     },
     "exp_name": "name_of_exp",
     "log_dir": "denoising_exps/sigma_5",
     "net_params": {
         "bias": true,
         "kernel_size": 3,
-        "num_channels": 64,
-        "num_layers": 5,
-        "padding_mode": "zeros",
-        "projection": "spectral_norm",          // how to make conv layer 1-Lipschitz no_projection/spectral_norm
-        "signal_size": 256,                     // size of the eigenimage to estimate spectral norm in power iter
-        "weight_initialization": "identity"     // He_uniform/He_normal/Xavier_uniform/Xavier_normal/identity
+        "num_channels": [1, 64, 64, 64, 64, 64, 64, 64, 1]
     },
     "optimizer": {                              
         "lr_spline_coeffs": 1e-06,
@@ -66,8 +61,8 @@ Below we detail the model hyperparameters for the denoising experiment that can 
     "seed": 42,
     "sigma": 5,                                 // noise level
     "training_options": {
-        "epochs": 20,
-        "batch_size": 4,
+        "epochs": 50,
+        "batch_size": 128,
         "num_workers": 1,
         "train_data_file": "path/to/train.file",
         "val_data_file": "path/to/val.file"

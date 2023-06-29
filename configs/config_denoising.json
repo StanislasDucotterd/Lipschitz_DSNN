@@ -1,6 +1,7 @@
 {
     "activation_fn_params": {
         "activation_type": "linearspline",
+        "prelu_init": -1,
         "groupsort_groupsize": 2,
         "lipschitz_constrained": true,
         "lmbda": 1e-06,
@@ -8,12 +9,11 @@
         "spline_range": 0.1,
         "spline_size": 51
     },
-    "exp_name": "TEST",
+    "exp_name": "name_of_exp",
     "log_dir": "denoising_exps/sigma_15",
     "net_params": {
         "bias": true,
         "kernel_size": 3,
-        "layer_type": "bcop",
         "num_channels": [1, 64, 64, 64, 64, 64, 64, 64, 1]
     },
     "optimizer": {
