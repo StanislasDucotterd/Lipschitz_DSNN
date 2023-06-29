@@ -30,7 +30,7 @@ python train.py --exp 1d or wasserstein or wgan or denoising --config path/to/co
 
 #### Config file details️
 
-Information about the hyperparameters of the three experiments can be found in the config folder. 
+Information about the hyperparameters that yield the best performance for the four experiments can be found in the config folder. 
 
 Below we detail the model hyperparameters for the denoising experiment that can be controlled in the config file `configs/config_denoising.json`.
 
@@ -84,7 +84,7 @@ Below we detail the model hyperparameters that can be controlled in the config f
             1
         ],
         "projection": "orthonormalize",
-        "weight_initialization": "orthonormal" // 
+        "weight_initialization": "orthonormal" 
     },
     "optimizer": {
         "lr_spline_coeffs": 5e-05,
@@ -128,7 +128,8 @@ Below we detail the model hyperparameters that can be controlled in the config f
         "spectral_norm": true,
         "alphas": true,
         "weight_initialization": "Xavier_normal",
-        "batch_norm": false                                                 
+        "batch_norm": false
+    }                                                 
     ...
     "dataset" : {
         "training_dataset_size": 1000,              // Choose number of training point
