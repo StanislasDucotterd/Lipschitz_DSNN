@@ -25,7 +25,7 @@ conda env create -f environment.yml
 You can train a model with the following command:
 
 ```bash
-python train.py --exp 1d/wasserstein/wgan/denoising --config path/to/config --device cpu/cuda:n
+python train.py --exp 1d or wasserstein or wgan or denoising --config path/to/config --device cpu or cuda:n
 ```
 
 #### Config file details️
