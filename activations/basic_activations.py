@@ -19,15 +19,15 @@ class LipschitzPReLU(torch.nn.Module):
         self.num_parameters = num_parameters
         super(LipschitzPReLU, self).__init__()
         if init == 'maxmin':
-            weight = torch.empty(num_parameters)
-            weight[::2] = 1
-            weight[1::2] = -1
-            self.weight = nn.Parameter(weight)
+            prelu_weight = torch.empty(num_parameters)
+            prelu_weight[::2] = 1
+            prelu_weight[1::2] = -1
+            self.prelu_weight = nn.Parameter(prelu_weight)
         else:
-            self.weight = nn.Parameter(torch.empty(num_parameters).fill_(init))
+            self.prelu_weight = nn.Parameter(torch.empty(num_parameters).fill_(init))
 
     def forward(self, input: Tensor) -> Tensor:
-        return F.prelu(input, torch.clip(self.weight, -1, 1))
+        return F.prelu(input, torch.clip(self.prelu_weight, -1, 1))
 
     def extra_repr(self) -> str:
         return 'num_parameters={}'.format(self.num_parameters)
