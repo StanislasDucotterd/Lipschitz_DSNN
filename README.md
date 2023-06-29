@@ -25,7 +25,7 @@ conda env create -f environment.yml
 You can train a model with the following command:
 
 ```bash
-python train.py --exp 1d/wasserstein/denoising --config path/to/config --device cpu/cuda:n
+python train.py --exp 1d/wasserstein/wgan/denoising --config path/to/config --device cpu/cuda:n
 ```
 
 #### Config file details️
@@ -107,6 +107,21 @@ Below we detail the model hyperparameters that can be controlled in the config f
 }
 ```
 
+Below we detail the model hyperparameters that can be controlled in the config file `configs/config_wgan.json`.
+
+```javascript
+{
+    ...
+    "generator_activation_fn_params": {
+        "activation_type": "relu"               // we only use ReLU for the generator since it is not 1-lipschitz
+    },
+    "generator_optimizer": {
+        "lr_weights": 0.0002
+    }
+    ...                                           
+}
+```
+
 Below we detail the model hyperparameters that can be controlled in the config file `configs/config_denoiser.json`.
 
 ```javascript
@@ -126,6 +141,6 @@ Below we detail the model hyperparameters that can be controlled in the config f
         "function_type": "f2",                      // Choose between [f1, f2, f3, f4, random_spline]
         "nbr_models": 10,                           // Number of models trained, median or mean results will be reported
         "number_knots": 7                           // Number of knots of the random spline      
-    },
+    }
     ...
 }

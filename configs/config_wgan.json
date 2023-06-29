@@ -19,8 +19,6 @@
         "activation_type": "relu"
     },
     "generator_optimizer": {
-        "lr_spline_coeffs": 5e-06,
-        "lr_spline_scaling_coeffs": 5e-05,
         "lr_weights": 0.0002
     },
     "log_dir": "wgan_exps",
