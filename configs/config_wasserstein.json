@@ -9,7 +9,7 @@
         "spline_size": 21,
         "lmbda": 1e-10
     },
-    "exp_name": "DS_depth_3_width_1024_region_20_range_0.15_lambda_1e-10",
+    "exp_name": "REMOVE",
     "log_dir": "wasserstein_exps",
     "net_params": {
         "bias": true,

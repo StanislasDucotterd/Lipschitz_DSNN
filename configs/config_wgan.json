@@ -1,0 +1,35 @@
+{
+    "discriminator_activation_fn_params": {
+        "activation_type": "linearspline",
+        "groupsort_groupsize": 2,
+        "lipschitz_constrained": true,
+        "lmbda": 1e-6,
+        "prelu_init": -1,
+        "spline_init": "absolute_value",
+        "spline_range": 0.1,
+        "spline_size": 21
+    },
+    "discriminator_optimizer": {
+        "lr_spline_coeffs": 5e-05,
+        "lr_spline_scaling_coeffs": 0.0005,
+        "lr_weights": 0.002
+    },
+    "exp_name": "TEST",
+    "generator_activation_fn_params": {
+        "activation_type": "relu"
+    },
+    "generator_optimizer": {
+        "lr_spline_coeffs": 5e-06,
+        "lr_spline_scaling_coeffs": 5e-05,
+        "lr_weights": 0.0002
+    },
+    "log_dir": "wgan_exps",
+    "seed": 1,
+    "training_options": {
+        "batch_size": 64,
+        "epochs": 50,
+        "num_workers": 1,
+        "train_dataset_file": "data/mnist/train.pt",
+        "val_dataset_file": "data/mnist/test.pt"
+    }
+}

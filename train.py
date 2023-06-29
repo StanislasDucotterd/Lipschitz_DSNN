@@ -4,6 +4,7 @@ import torch
 from utils.trainer_denoiser import TrainerDenoiser
 from utils.trainer_1d import Trainer1D
 from utils.trainer_wasserstein import TrainerWasserstein
+from utils.trainer_wgan import TrainerWGAN
 import os
 import warnings
 warnings.filterwarnings("ignore", message="Setting attributes on ParameterList is not supported.")
@@ -18,6 +19,8 @@ def main(args):
         trainer_inst = Trainer1D(config, config['seed'], args.device)
     elif args.exp == 'wasserstein':
         trainer_inst = TrainerWasserstein(config, args.device)
+    elif args.exp == 'wgan':
+        trainer_inst = TrainerWGAN(config, args.device)
     else:
         raise ValueError('Need to provide a valid exp name')
     

@@ -9,7 +9,7 @@ from dataloader.BSD500 import BSD500
 from architectures.simple_cnn import SimpleCNN
 from utils import metrics, utilities, spline_utils
 import matplotlib.pyplot as plt
-from layers.lipschitzconv2d import LipschitzConv2d
+
 class TrainerDenoiser:
     """
     """
@@ -33,9 +33,6 @@ class TrainerDenoiser:
 
         self.model = SimpleCNN(config['net_params'], **config['activation_fn_params'])
         self.model = self.model.to(device)
-        for module in self.model.layers:
-                if isinstance(module, LipschitzConv2d):
-                    module.additional_parameters['largest_eigenvector'] = module.additional_parameters['largest_eigenvector'].to(device)
         
         print("Number of parameters in the model: ", self.model.get_num_params())
 
@@ -81,17 +78,12 @@ class TrainerDenoiser:
         best_psnr = 0
         self.model.train()
         for epoch in range(self.epochs+1):
-            
-            #We do only one power iteration for the first 90% of the training and do five of them for the last 10%
-            #We keep the epoch with the best validation results among the 10% with five iters
-            if epoch >= self.epochs * 0.9:
-                self.model.set_end_of_training()
 
             self.train_epoch(epoch)
             val_epoch_results = self.valid_epoch(epoch)
                 
             # SAVE CHECKPOINT
-            if val_epoch_results['val_psnr'] > best_psnr and epoch >= self.epochs * 0.9:
+            if val_epoch_results['val_psnr'] > best_psnr:
                 best_psnr = val_epoch_results['val_psnr']
                 self.save_checkpoint(epoch)
         
@@ -112,7 +104,7 @@ class TrainerDenoiser:
 
             self.optimizer.zero_grad()
                 
-            output = (noisy_data + self.model(noisy_data))/2.0
+            output = self.model(noisy_data)
 
             # data fidelity
             data_fidelity = (self.criterion(output, data))/(self.batch_size)
@@ -157,7 +149,7 @@ class TrainerDenoiser:
                 data = data.to(self.device)
                 noisy_data = data + (self.sigma/255.0)*torch.randn(data.shape, device=self.device)
 
-                output = (noisy_data + self.model(noisy_data))/2.0
+                output = self.model(noisy_data)
 
                 loss = self.criterion(output, data)
 

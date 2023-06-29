@@ -3,14 +3,13 @@ import torch
 from torch.utils.data import Dataset
 from architectures.simple_generator import SimpleGenerator
 
-
 class MnistGenerator(torch.nn.Module):
     """GAN Genrator of MNIST Images"""
     def __init__(self, device):
         super().__init__()
         self.device = device
         self.input_dim = 62
-        self.generator = SimpleGenerator(input_dim=self.input_dim, output_channel=1, output_size=28)
+        self.generator = SimpleGenerator(**{'activation_type': 'relu'})
         self.generator.load_state_dict(torch.load('data/generator_weights.pth'))
         self.generator = self.generator.to(self.device)
         self.generator.eval()
@@ -24,10 +23,12 @@ class MnistGenerator(torch.nn.Module):
 
 class MNIST(Dataset):
     "Real MNIST Images"
-    def __init__(self, data_file):
+    def __init__(self, data_file, center=False):
         super(Dataset, self).__init__()
         self.input, self.target = torch.load(data_file)
-        self.input = self.input.unsqueeze(1)
+        self.input = self.input.unsqueeze(1) / 255.
+        if center:
+            self.input = self.input*2-1
 
     def __len__(self):
         return self.input.shape[0]
