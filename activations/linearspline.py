@@ -146,8 +146,7 @@ class LinearSpline(ABC, nn.Module):
         # self.zero_knot_indexes[i] gives index of knot 0 for filter/neuron_i.
         # size: (num_activations,)
         activation_arange = torch.arange(0, self.num_activations)
-        self.zero_knot_indexes = (activation_arange * self.size +
-                                  (self.size // 2))
+        self.zero_knot_indexes = (activation_arange * self.size + (self.size // 2))
 
     @property
     def coefficients(self):

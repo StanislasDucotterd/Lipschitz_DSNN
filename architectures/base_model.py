@@ -172,8 +172,7 @@ class BaseModel(nn.Module):
         """
 
         for module in self.modules():
-
-            if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+            if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear) or isinstance(module, nn.ConvTranspose2d):
                 if init_type == 'He_uniform':
                     nn.init.kaiming_uniform_(module.weight, a=0, mode='fan_out', nonlinearity='relu')
                 elif init_type == 'He_normal':
@@ -184,6 +183,9 @@ class BaseModel(nn.Module):
                     nn.init.xavier_uniform_(module.weight)
                 elif init_type == 'orthonormal':
                     nn.init.orthogonal_(module.weight)
+                elif init_type == 'gan':
+                    module.weight.data.normal_(0, 0.02)
+                    module.bias.data.zero_()
                 elif init_type == 'identity':
                     if isinstance(module, nn.Conv2d):
                         # initialize weights close to identity with some small additional noise
