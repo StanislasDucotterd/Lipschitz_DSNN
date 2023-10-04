@@ -114,6 +114,10 @@ class BaseModel(nn.Module):
             for i in range(len(activation_specs)):
                 activations.append(nn.ReLU())
 
+        elif self.activation_type == 'elu':
+            for i in range(len(activation_specs)):
+                activations.append(nn.ELU())
+
         elif self.activation_type == 'prelu':
             for _, num_activations in activation_specs:
                 activations.append(LipschitzPReLU(num_parameters=num_activations, init=self.prelu_init))

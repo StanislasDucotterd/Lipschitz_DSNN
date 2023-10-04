@@ -21,6 +21,8 @@ def initialize_coeffs(init, grid_tensor, grid, size):
         
         if init == 'identity':
             coefficients = grid_tensor
+        elif init == 'zero':
+            coefficients = torch.zeros(grid_tensor.shape)
         elif init == 'relu':
             coefficients = F.relu(grid_tensor)
         elif init == 'absolute_value':

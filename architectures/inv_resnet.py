@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 from architectures.base_model import BaseModel
-from layers.lipschitzlinear import LipschitzLinear
+from architectures.invertible_block import InvertibleBlock
 from projections.fc_projections import identity, bjorck_orthonormalize_fc
 
 
-class SimpleFC(BaseModel):
+class InvResNet(BaseModel):
     """simple architecture for a fully-connected network"""
     def __init__(self, network_parameters, **params):
         
@@ -25,22 +25,28 @@ class SimpleFC(BaseModel):
         else:
             raise ValueError('Projection type is not valid')
 
-        layer_sizes = network_parameters['layer_sizes']
+        nb_block = network_parameters['nb_block']
+        lipschitz = network_parameters['lipschitz']
+        width = network_parameters['width']
+        dim = network_parameters['dim']
+        nb_layer = network_parameters['nb_layer']
+        bias = network_parameters['bias']
 
-
-        for i in range(len(layer_sizes)-2):
-            modules.append(LipschitzLinear(1, projection, layer_sizes[i], layer_sizes[i+1]))
-            modules.append(self.init_activation(('fc', layer_sizes[i+1])))
-
-
-        modules.append(LipschitzLinear(1, projection, layer_sizes[-2], layer_sizes[-1]))
+        for i in range(nb_block):
+            modules.append(InvertibleBlock(lipschitz, width, dim, nb_layer, projection, bias, **params))
 
         self.initialization(init_type=network_parameters['weight_initialization'])
         self.num_params = self.get_num_params()
 
         self.layers = nn.Sequential(*modules)
-        
+    
 
     def forward(self, x):
         """ """
         return self.layers(x)
+    
+    def inverse(self, x):
+        """ """
+        for i in range(len(self.layers), 0, -1):
+            x = self.layers[i-1].inverse(x)
+        return x
